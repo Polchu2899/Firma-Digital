@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FirmaDoc · Lucas y Leo Digital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        oklch(12% 0.01 260);
+    --bg2:       oklch(16% 0.015 260);
+    --bg3:       oklch(20% 0.018 260);
+    --border:    oklch(30% 0.02 260);
+    --accent:    oklch(65% 0.18 38);
+    --accent2:   oklch(55% 0.16 38);
+    --text:      oklch(92% 0.005 260);
+    --text2:     oklch(65% 0.01 260);
+    --text3:     oklch(45% 0.01 260);
+    --success:   oklch(65% 0.15 145);
+    --danger:    oklch(62% 0.18 20);
+    --radius:    12px;
+    --shadow:    0 4px 24px oklch(0% 0 0 / 0.4);
+  }
+
+  html { font-family: 'DM Sans', sans-serif; font-size: 16px; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    height: 60px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-shrink: 0;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: oklch(65% 0.18 38 / 0.15);
+    color: var(--accent);
+    border: 1px solid oklch(65% 0.18 38 / 0.3);
+  }
+
+  /* ── LAYOUT ── */
+  .app {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - 60px);
+  }
+
+  /* ── VISOR PDF ── */
+  .viewer-area {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid var(--border);
+  }
+  .viewer-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .viewer-toolbar span {
+    font-size: 0.8rem;
+    color: var(--text2);
+  }
+  .page-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+  }
+  .btn-icon {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .btn-icon:hover { background: var(--border); }
+  .btn-icon:disabled { opacity: 0.3; cursor: default; }
+  .page-info { font-size: 0.8rem; color: var(--text2); min-width: 60px; text-align: center; }
+
+  .viewer-scroll {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px;
+    gap: 16px;
+    background: oklch(8% 0.01 260);
+  }
+  .viewer-scroll::-webkit-scrollbar { width: 6px; }
+  .viewer-scroll::-webkit-scrollbar-track { background: transparent; }
+  .viewer-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .pdf-page-wrapper {
+    position: relative;
+    box-shadow: var(--shadow);
+    border-radius: 4px;
+    overflow: hidden;
+    line-height: 0;
+  }
+  .pdf-canvas { display: block; }
+
+  /* Estado vacío */
+  .drop-zone {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 40px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .drop-zone.dragover { background: oklch(65% 0.18 38 / 0.05); }
+  .drop-icon {
+    width: 80px; height: 80px;
+    border: 2px dashed var(--border);
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .drop-zone.dragover .drop-icon { border-color: var(--accent); }
+  .drop-zone h2 { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 700; }
+  .drop-zone p { color: var(--text2); font-size: 0.9rem; text-align: center; line-height: 1.5; }
+  .btn-upload {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-upload:hover { background: var(--accent2); transform: translateY(-1px); }
+  #file-input { display: none; }
+
+  /* ── PANEL DERECHO ── */
+  .panel {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    background: var(--bg2);
+  }
+  .panel::-webkit-scrollbar { width: 4px; }
+  .panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .panel-section {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-section:last-child { border-bottom: none; }
+  .panel-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Info doc */
+  .doc-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg3);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+  .doc-icon {
+    width: 36px; height: 36px;
+    background: oklch(65% 0.18 38 / 0.15);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .doc-name { font-size: 0.85rem; font-weight: 500; line-height: 1.3; word-break: break-all; }
+  .doc-pages { font-size: 0.75rem; color: var(--text3); margin-top: 2px; }
+
+  /* Firmante */
+  .input-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .input-group label { font-size: 0.78rem; color: var(--text2); font-weight: 500; }
+  .input-group input {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .input-group input:focus { border-color: var(--accent); }
+  .input-group input::placeholder { color: var(--text3); }
+
+  /* Canvas firma */
+  .sig-wrap {
+    position: relative;
+    background: oklch(98% 0.002 260);
+    border-radius: var(--radius);
+    border: 2px dashed var(--border);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .sig-wrap.has-sig { border-color: var(--accent); border-style: solid; }
+  #sig-canvas {
+    display: block;
+    width: 100%;
+    height: 140px;
+    cursor: crosshair;
+    touch-action: none;
+  }
+  .sig-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .sig-placeholder span {
+    font-size: 0.82rem;
+    color: oklch(50% 0.01 260);
+    font-style: italic;
+  }
+  .sig-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+  .btn-clear {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .btn-clear:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* Checkbox oposición */
+  .checkbox-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 12px;
+    background: var(--bg3);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: border-color 0.15s;
+    margin-bottom: 8px;
+  }
+  .checkbox-row:hover { border-color: var(--accent); }
+  .checkbox-row input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: var(--accent);
+    flex-shrink: 0;
+    margin-top: 2px;
+    cursor: pointer;
+  }
+  .checkbox-row span {
+    font-size: 0.8rem;
+    color: var(--text2);
+    line-height: 1.4;
+  }
+
+  /* Botón principal */
+  .btn-sign {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    letter-spacing: -0.01em;
+  }
+  .btn-sign:hover:not(:disabled) { background: var(--accent2); transform: translateY(-2px); box-shadow: 0 8px 24px oklch(65% 0.18 38 / 0.3); }
+  .btn-sign:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-sign.loading { pointer-events: none; }
+
+  /* Estado firmado */
+  .success-banner {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 20px;
+    background: oklch(65% 0.15 145 / 0.1);
+    border: 1px solid oklch(65% 0.15 145 / 0.3);
+    border-radius: var(--radius);
+    text-align: center;
+  }
+  .success-banner.show { display: flex; }
+  .success-icon {
+    width: 48px; height: 48px;
+    background: oklch(65% 0.15 145 / 0.2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .success-banner h3 { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; color: var(--success); }
+  .success-banner p { font-size: 0.78rem; color: var(--text2); line-height: 1.5; }
+  .btn-download {
+    width: 100%;
+    padding: 11px;
+    background: var(--success);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-download:hover { filter: brightness(1.1); }
+
+  /* Registro */
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.78rem;
+  }
+  .meta-row:last-child { border-bottom: none; }
+  .meta-key { color: var(--text3); }
+  .meta-val { color: var(--text2); font-weight: 500; font-family: 'DM Mono', monospace; }
+
+  /* Spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid white;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    box-shadow: var(--shadow);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 999;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.error { border-color: var(--danger); color: var(--danger); }
+
+  /* Mobile */
+  @media (max-width: 768px) {
+    .app { grid-template-columns: 1fr; grid-template-rows: 1fr auto; height: auto; }
+    .viewer-area { height: 55vh; }
+    .panel { max-height: none; }
+    .topbar { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="logo">
+    <span class="logo-dot"></span>
+    FirmaDoc
+  </div>
+  <div class="topbar-right">
+    <span class="badge">Beta</span>
+    <span style="font-size:0.8rem;color:var(--text3)">Lucas y Leo Digital</span>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- VISOR -->
+  <div class="viewer-area">
+    <div class="viewer-toolbar" id="viewer-toolbar" style="display:none">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span id="toolbar-filename" style="font-size:0.82rem;color:var(--text2);font-weight:500"></span>
+      <div class="page-nav">
+        <button class="btn-icon" id="btn-prev" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <span class="page-info" id="page-info">1 / 1</span>
+        <button class="btn-icon" id="btn-next" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Drop zone (estado inicial) -->
+    <div class="drop-zone" id="drop-zone">
+      <div class="drop-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      </div>
+      <h2>Carga el contrato</h2>
+      <p>Arrastra un PDF aquí<br>o haz clic para seleccionarlo</p>
+      <button class="btn-upload" onclick="document.getElementById('file-input').click()">Seleccionar PDF</button>
+      <input type="file" id="file-input" accept=".pdf">
+    </div>
+
+    <!-- Visor páginas -->
+    <div class="viewer-scroll" id="viewer-scroll" style="display:none"></div>
+  </div>
+
+  <!-- PANEL DERECHO -->
+  <div class="panel">
+
+    <!-- Documento -->
+    <div class="panel-section">
+      <div class="panel-label">Documento</div>
+      <div class="doc-info" id="doc-info" style="display:none">
+        <div class="doc-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+        <div>
+          <div class="doc-name" id="doc-name">—</div>
+          <div class="doc-pages" id="doc-pages">—</div>
+        </div>
+      </div>
+      <div id="doc-empty" style="font-size:0.82rem;color:var(--text3);padding:8px 0">Sin documento cargado</div>
+    </div>
+
+    <!-- Datos firmante -->
+    <div class="panel-section">
+      <div class="panel-label">Datos del firmante</div>
+      <div class="input-group">
+        <label>Nombre completo *</label>
+        <input type="text" id="inp-nombre" placeholder="Nombre Apellido Apellido">
+      </div>
+      <div class="input-group">
+        <label>Email *</label>
+        <input type="email" id="inp-email" placeholder="email@empresa.com">
+      </div>
+      <div class="input-group">
+        <label>NIF / CIF</label>
+        <input type="text" id="inp-nif" placeholder="12345678A">
+      </div>
+    </div>
+
+    <!-- Firma -->
+    <div class="panel-section">
+      <div class="panel-label">Firma</div>
+      <div class="sig-wrap" id="sig-wrap">
+        <canvas id="sig-canvas"></canvas>
+        <div class="sig-placeholder" id="sig-placeholder">
+          <span>Dibuja tu firma aquí</span>
+        </div>
+      </div>
+      <div class="sig-actions">
+        <button class="btn-clear" id="btn-clear-sig">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:4px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+          Borrar
+        </button>
+      </div>
+    </div>
+
+    <!-- Consentimiento -->
+    <div class="panel-section">
+      <div class="panel-label">Consentimiento</div>
+      <label class="checkbox-row">
+        <input type="checkbox" id="chk-portfolio">
+        <span>Me opongo a que Lucas y Leo Digital incluya este proyecto en su portfolio o me mencione como cliente de referencia.</span>
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="chk-acepto" required>
+        <span>He leído y acepto las condiciones del contrato en su totalidad. *</span>
+      </label>
+    </div>
+
+    <!-- Acción -->
+    <div class="panel-section">
+      <button class="btn-sign" id="btn-sign" disabled>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Firmar documento
+      </button>
+    </div>
+
+    <!-- Éxito -->
+    <div class="panel-section" id="section-success" style="display:none">
+      <div class="success-banner show">
+        <div class="success-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h3>Documento firmado</h3>
+        <p>La firma ha sido incrustada en el PDF. Descárgalo para guardarlo.</p>
+        <button class="btn-download" id="btn-download">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar PDF firmado
+        </button>
+      </div>
+
+      <!-- Registro de auditoría -->
+      <div style="margin-top:16px">
+        <div class="panel-label" style="margin-bottom:10px">Registro de auditoría</div>
+        <div class="meta-row">
+          <span class="meta-key">Firmante</span>
+          <span class="meta-val" id="meta-nombre">—</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">Email</span>
+          <span class="meta-val" id="meta-email">—</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">Fecha y hora</span>
+          <span class="meta-val" id="meta-fecha">—</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">Hash SHA-256</span>
+          <span class="meta-val" id="meta-hash" style="font-size:0.65rem;word-break:break-all;max-width:160px;text-align:right">—</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-key">Oposición portfolio</span>
+          <span class="meta-val" id="meta-portfolio">—</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<!-- pdf-lib -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+
+<script>
+// ── GLOBALS ──────────────────────────────────────────────────────────────────
+let pdfDoc = null;          // PDF.js document
+let pdfBytes = null;        // ArrayBuffer original
+let currentPage = 1;
+let totalPages = 0;
+let signedPdfBytes = null;  // Resultado firmado
+let fileName = '';
+
+// ── PDF.JS INIT ───────────────────────────────────────────────────────────────
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ── FIRMA CANVAS ──────────────────────────────────────────────────────────────
+const sigCanvas  = document.getElementById('sig-canvas');
+const sigCtx     = sigCanvas.getContext('2d');
+const sigWrap    = document.getElementById('sig-wrap');
+const sigPh      = document.getElementById('sig-placeholder');
+let drawing      = false;
+let hasSig       = false;
+let lastX, lastY;
+
+function resizeSigCanvas() {
+  const rect = sigCanvas.getBoundingClientRect();
+  const dpr  = window.devicePixelRatio || 1;
+  sigCanvas.width  = rect.width  * dpr;
+  sigCanvas.height = rect.height * dpr;
+  sigCtx.scale(dpr, dpr);
+  sigCtx.strokeStyle = '#1A1A2E';
+  sigCtx.lineWidth   = 2.2;
+  sigCtx.lineCap     = 'round';
+  sigCtx.lineJoin    = 'round';
+}
+resizeSigCanvas();
+
+function getPos(e) {
+  const rect = sigCanvas.getBoundingClientRect();
+  const src  = e.touches ? e.touches[0] : e;
+  return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+}
+
+sigCanvas.addEventListener('pointerdown', e => {
+  drawing = true;
+  const { x, y } = getPos(e);
+  lastX = x; lastY = y;
+  sigCtx.beginPath();
+  sigCtx.moveTo(x, y);
+  e.preventDefault();
+});
+
+sigCanvas.addEventListener('pointermove', e => {
+  if (!drawing) return;
+  const { x, y } = getPos(e);
+  sigCtx.lineTo(x, y);
+  sigCtx.stroke();
+  sigCtx.beginPath();
+  sigCtx.moveTo(x, y);
+  lastX = x; lastY = y;
+  if (!hasSig) {
+    hasSig = true;
+    sigWrap.classList.add('has-sig');
+    sigPh.style.opacity = '0';
+    updateSignBtn();
+  }
+  e.preventDefault();
+});
+
+['pointerup','pointerleave'].forEach(ev =>
+  sigCanvas.addEventListener(ev, () => { drawing = false; })
+);
+
+document.getElementById('btn-clear-sig').addEventListener('click', () => {
+  sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+  hasSig = false;
+  sigWrap.classList.remove('has-sig');
+  sigPh.style.opacity = '1';
+  updateSignBtn();
+});
+
+// ── VALIDACIÓN BOTÓN FIRMAR ───────────────────────────────────────────────────
+function updateSignBtn() {
+  const ok = pdfDoc &&
+              hasSig &&
+              document.getElementById('inp-nombre').value.trim() &&
+              document.getElementById('inp-email').value.trim() &&
+              document.getElementById('chk-acepto').checked;
+  document.getElementById('btn-sign').disabled = !ok;
+}
+
+['inp-nombre','inp-email','inp-nif'].forEach(id =>
+  document.getElementById(id).addEventListener('input', updateSignBtn)
+);
+document.getElementById('chk-acepto').addEventListener('change', updateSignBtn);
+
+// ── CARGA PDF ─────────────────────────────────────────────────────────────────
+const fileInput = document.getElementById('file-input');
+const dropZone  = document.getElementById('drop-zone');
+
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) loadPDF(e.target.files[0]);
+});
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type === 'application/pdf') loadPDF(f);
+  else showToast('Solo se aceptan archivos PDF', true);
+});
+dropZone.addEventListener('click', e => {
+  if (e.target === dropZone || e.target.tagName === 'H2' || e.target.tagName === 'P') {
+    fileInput.click();
+  }
+});
+
+async function loadPDF(file) {
+  fileName = file.name;
+  const buffer = await file.arrayBuffer();
+  pdfBytes = buffer.slice(0);
+
+  const typedArray = new Uint8Array(buffer);
+  pdfDoc = await pdfjsLib.getDocument({ data: typedArray }).promise;
+  totalPages = pdfDoc.numPages;
+  currentPage = 1;
+
+  // UI
+  dropZone.style.display = 'none';
+  document.getElementById('viewer-scroll').style.display = 'flex';
+  document.getElementById('viewer-toolbar').style.display = 'flex';
+  document.getElementById('doc-empty').style.display = 'none';
+  document.getElementById('doc-info').style.display = 'flex';
+  document.getElementById('doc-name').textContent = file.name;
+  document.getElementById('doc-pages').textContent = `${totalPages} página${totalPages > 1 ? 's' : ''}`;
+  document.getElementById('toolbar-filename').textContent = file.name;
+
+  await renderAllPages();
+  updateNav();
+  updateSignBtn();
+}
+
+async function renderAllPages() {
+  const scroll = document.getElementById('viewer-scroll');
+  scroll.innerHTML = '';
+
+  for (let i = 1; i <= totalPages; i++) {
+    const page   = await pdfDoc.getPage(i);
+    const scale  = Math.min((scroll.clientWidth - 48) / page.getViewport({ scale: 1 }).width, 1.8);
+    const vp     = page.getViewport({ scale });
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'pdf-page-wrapper';
+    wrapper.dataset.page = i;
+
+    const canvas  = document.createElement('canvas');
+    canvas.className = 'pdf-canvas';
+    canvas.width  = vp.width;
+    canvas.height = vp.height;
+
+    wrapper.appendChild(canvas);
+    scroll.appendChild(wrapper);
+
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+  }
+}
+
+// Navegación por páginas (scroll a la página)
+document.getElementById('btn-prev').addEventListener('click', () => {
+  if (currentPage > 1) { currentPage--; scrollToPage(currentPage); updateNav(); }
+});
+document.getElementById('btn-next').addEventListener('click', () => {
+  if (currentPage < totalPages) { currentPage++; scrollToPage(currentPage); updateNav(); }
+});
+
+function scrollToPage(n) {
+  const el = document.querySelector(`[data-page="${n}"]`);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function updateNav() {
+  document.getElementById('page-info').textContent = `${currentPage} / ${totalPages}`;
+  document.getElementById('btn-prev').disabled = currentPage <= 1;
+  document.getElementById('btn-next').disabled = currentPage >= totalPages;
+}
+
+// Detectar página visible al hacer scroll
+const viewerScroll = document.getElementById('viewer-scroll');
+viewerScroll.addEventListener('scroll', () => {
+  const pages = document.querySelectorAll('.pdf-page-wrapper');
+  const scrollTop = viewerScroll.scrollTop + viewerScroll.clientHeight / 2;
+  pages.forEach(p => {
+    if (p.offsetTop <= scrollTop && p.offsetTop + p.offsetHeight > scrollTop) {
+      currentPage = parseInt(p.dataset.page);
+      document.getElementById('page-info').textContent = `${currentPage} / ${totalPages}`;
+      document.getElementById('btn-prev').disabled = currentPage <= 1;
+      document.getElementById('btn-next').disabled = currentPage >= totalPages;
+    }
+  });
+});
+
+// ── HASH SHA-256 ──────────────────────────────────────────────────────────────
+async function sha256(buffer) {
+  const hashBuf = await crypto.subtle.digest('SHA-256', buffer);
+  return Array.from(new Uint8Array(hashBuf))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+// ── FIRMAR PDF ────────────────────────────────────────────────────────────────
+document.getElementById('btn-sign').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-sign');
+  btn.classList.add('loading');
+  btn.innerHTML = '<div class="spinner"></div> Procesando...';
+
+  try {
+    const nombre    = document.getElementById('inp-nombre').value.trim();
+    const email     = document.getElementById('inp-email').value.trim();
+    const nif       = document.getElementById('inp-nif').value.trim();
+    const opPortf   = document.getElementById('chk-portfolio').checked;
+    const ahora     = new Date();
+    const fechaStr  = ahora.toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'medium' });
+    const fechaISO  = ahora.toISOString();
+
+    // 1. Hash del PDF original
+    const hashOriginal = await sha256(pdfBytes);
+
+    // 2. Imagen de la firma desde canvas (PNG recortada al área dibujada)
+    const sigImgData = getSigImageCropped();
+
+    // 3. Cargar PDF con pdf-lib
+    const { PDFDocument, rgb, StandardFonts } = PDFLib;
+    const pdfLibDoc  = await PDFDocument.load(pdfBytes);
+    const pages      = pdfLibDoc.getPages();
+    const lastPage   = pages[pages.length - 1];
+    const { width, height } = lastPage.getSize();
+
+    // 4. Incrustar imagen de firma
+    const sigImg     = await pdfLibDoc.embedPng(sigImgData);
+    const sigDims    = sigImg.scale(0.45);
+
+    // 5. Fuente
+    const font = await pdfLibDoc.embedFont(StandardFonts.Helvetica);
+    const fontBold = await pdfLibDoc.embedFont(StandardFonts.HelveticaBold);
+
+    // 6. Área de firma en la última página (parte inferior)
+    const marginX   = 50;
+    const areaY     = 100;
+    const areaH     = 160;
+
+    // Línea separadora
+    lastPage.drawLine({
+      start: { x: marginX, y: areaY + areaH },
+      end:   { x: width - marginX, y: areaY + areaH },
+      thickness: 0.5,
+      color: rgb(0.7, 0.7, 0.7),
+    });
+
+    // Título bloque firma
+    lastPage.drawText('FIRMA ELECTRÓNICA DEL CLIENTE', {
+      x: marginX, y: areaY + areaH - 18,
+      size: 7, font: fontBold,
+      color: rgb(0.55, 0.55, 0.55),
+    });
+
+    // Imagen firma
+    lastPage.drawImage(sigImg, {
+      x: marginX,
+      y: areaY + areaH - 18 - sigDims.height - 8,
+      width:  sigDims.width,
+      height: sigDims.height,
+    });
+
+    // Línea bajo firma
+    lastPage.drawLine({
+      start: { x: marginX, y: areaY + areaH - 18 - sigDims.height - 12 },
+      end:   { x: marginX + 160, y: areaY + areaH - 18 - sigDims.height - 12 },
+      thickness: 0.5,
+      color: rgb(0.3, 0.3, 0.3),
+    });
+
+    // Datos firmante
+    const col2X = marginX + 190;
+    const lineH = 13;
+    let   ty    = areaY + areaH - 26;
+
+    const campos = [
+      ['Firmante:', nombre],
+      ['Email:', email],
+      ...(nif ? [['NIF/CIF:', nif]] : []),
+      ['Fecha firma:', fechaStr],
+      ['Oposición portfolio:', opPortf ? 'SÍ — Se opone' : 'NO — Consiente'],
+      ['Hash doc. original:', hashOriginal.substring(0, 32) + '...'],
+    ];
+
+    campos.forEach(([key, val]) => {
+      lastPage.drawText(key, { x: col2X, y: ty, size: 7, font: fontBold, color: rgb(0.4, 0.4, 0.4) });
+      lastPage.drawText(val, { x: col2X + 90, y: ty, size: 7, font, color: rgb(0.15, 0.15, 0.15), maxWidth: width - col2X - 90 - marginX });
+      ty -= lineH;
+    });
+
+    // Metadata PDF
+    pdfLibDoc.setTitle(`Contrato firmado — ${nombre}`);
+    pdfLibDoc.setAuthor('Lucas y Leo Digital');
+    pdfLibDoc.setSubject(`Firma electrónica · ${fechaISO}`);
+    pdfLibDoc.setKeywords([nombre, email, hashOriginal]);
+    pdfLibDoc.setCreationDate(ahora);
+    pdfLibDoc.setModificationDate(ahora);
+
+    // 7. Guardar
+    signedPdfBytes = await pdfLibDoc.save();
+
+    // 8. UI éxito
+    document.getElementById('section-success').style.display = 'block';
+    document.getElementById('meta-nombre').textContent   = nombre;
+    document.getElementById('meta-email').textContent    = email;
+    document.getElementById('meta-fecha').textContent    = fechaStr;
+    document.getElementById('meta-hash').textContent     = hashOriginal.substring(0, 20) + '…';
+    document.getElementById('meta-portfolio').textContent = opPortf ? 'Sí — Se opone' : 'No — Consiente';
+
+    btn.style.display = 'none';
+    showToast('Documento firmado correctamente');
+
+  } catch (err) {
+    console.error(err);
+    showToast('Error al procesar el documento', true);
+    btn.classList.remove('loading');
+    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Firmar documento';
+  }
+});
+
+// ── DESCARGAR PDF FIRMADO ─────────────────────────────────────────────────────
+document.getElementById('btn-download').addEventListener('click', () => {
+  if (!signedPdfBytes) return;
+  const blob = new Blob([signedPdfBytes], { type: 'application/pdf' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = fileName.replace('.pdf', '') + '_FIRMADO.pdf';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// ── UTILIDADES ────────────────────────────────────────────────────────────────
+function getSigImageCropped() {
+  // Crear canvas temporal con fondo blanco
+  const tmp    = document.createElement('canvas');
+  const dpr    = window.devicePixelRatio || 1;
+  tmp.width    = sigCanvas.width;
+  tmp.height   = sigCanvas.height;
+  const tCtx   = tmp.getContext('2d');
+  tCtx.fillStyle = '#ffffff';
+  tCtx.fillRect(0, 0, tmp.width, tmp.height);
+  tCtx.drawImage(sigCanvas, 0, 0);
+  return tmp.toDataURL('image/png');
+}
+
+function showToast(msg, error = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = 'toast' + (error ? ' error' : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+window.addEventListener('resize', () => {
+  if (pdfDoc) renderAllPages();
+});
+</script>
+</body>
+</html>
