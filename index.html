@@ -322,12 +322,12 @@ const FIRMA_LUCAS_B64 = "iVBORw0KGgoAAAANSUhEUgAAAT0AAADJCAYAAABR7+UmAAAuBElEQVR
 // Página 8 (índice 7): Prestador x=63.75 y≈628, Cliente x=315.75 y≈628
 const SIG_ZONES = {
   prestador: [
-    { page: 6, x: 36,  y: 262, w: 200, h: 50 }, // pág 7 contrato
-    { page: 7, x: 36,  y: 242, w: 200, h: 50 }  // pág 8 anexo
+    { page: 6, x: 70.8, y: 72,  w: 200, h: 118 }, // pág 7 — debajo "En prueba de conformidad"
+    { page: 7, x: 70.8, y: 299, w: 200, h: 77  }  // pág 8 — encima "EL PRESTADOR"
   ],
   cliente: [
-    { page: 6, x: 306, y: 262, w: 200, h: 50 }, // pág 7 contrato
-    { page: 7, x: 306, y: 242, w: 200, h: 50 }  // pág 8 anexo
+    { page: 6, x: 306,  y: 72,  w: 230, h: 118 }, // pág 7
+    { page: 7, x: 306,  y: 299, w: 230, h: 77  }  // pág 8
   ]
 };
 
@@ -509,8 +509,8 @@ function addSigZoneOverlay(wrapper, pageNum, vp, scale) {
   // Pág 7: espacio en blanco entre y_raw=380 y línea y_raw=484 → cliente lado derecho x=315
   // Pág 8: espacio en blanco entre y_raw=530 y línea y_raw=625 → cliente lado derecho x=315
   const zones = {
-    7: { x: 315.8, yTop: 415, yBot: 484, w: 230 },
-    8: { x: 315.8, yTop: 145, yBot: 215, w: 230 },
+    7: { x: 306, yTop: 602, yBot: 720, w: 230 },
+    8: { x: 306, yTop: 416, yBot: 493, w: 230 },
   };
   const z = zones[pageNum];
   if (!z) return;
@@ -633,32 +633,38 @@ document.getElementById("btn-sign").addEventListener("click", async () => {
 
     // ── Página 7 (índice 6) ──────────────────────────────────────────────────
     // Espacio firma: entre y_raw=380 y línea separadora y_raw=484
-    // ── Página 7: contrato (A4 596x842) ────────────────────────────────────
-    // Espacio firma: y_raw=412 a y_raw=484 (antes de EL PRESTADOR en y=486)
-    // y_pdflib = 842 - y_raw → zona: 358 a 430
+    // ── Página 7 (612x792) ──────────────────────────────────────────────────
+    // "En prueba de conformidad" acaba en y_raw=595.6
+    // Espacio firma debajo: y_raw=602-720 → y_pdflib = 792-720=72 a 792-602=190
     const p7 = pages[6];
 
     const lDims7 = lucasImg.scale(0.22);
-    p7.drawImage(lucasImg, { x: 63.8, y: 370, width: lDims7.width, height: lDims7.height });
-    p7.drawText(fechaStr.split(",")[0], { x: 100, y: 842 - 528, size: 7, font, color: rgb(0.15,0.15,0.15) });
+    p7.drawImage(lucasImg, { x: 70.8, y: 85, width: lDims7.width, height: lDims7.height });
+    p7.drawText(fechaStr.split(",")[0], { x: 100, y: 70, size: 7, font, color: rgb(0.15,0.15,0.15) });
 
     const cDims7 = cli1Img.scaleToFit(200, 60);
-    p7.drawImage(cli1Img, { x: 315.8, y: 370, width: cDims7.width, height: cDims7.height });
-    p7.drawText(nombre, { x: 315.8, y: 842 - 498, size: 7.5, font: fontBold, color: rgb(0.1,0.1,0.1) });
-    if (nif) p7.drawText(nif, { x: 315.8, y: 842 - 508, size: 7, font, color: rgb(0.2,0.2,0.2) });
-    p7.drawText(fechaStr.split(",")[0], { x: 315.8, y: 842 - 528, size: 7, font, color: rgb(0.2,0.2,0.2) });
+    p7.drawImage(cli1Img, { x: 306, y: 85, width: cDims7.width, height: cDims7.height });
+    p7.drawText(nombre, { x: 306, y: 75, size: 7.5, font: fontBold, color: rgb(0.1,0.1,0.1) });
+    if (nif) p7.drawText(nif, { x: 306, y: 66, size: 7, font, color: rgb(0.2,0.2,0.2) });
+    p7.drawText(fechaStr.split(",")[0], { x: 306, y: 57, size: 7, font, color: rgb(0.2,0.2,0.2) });
 
-    // ── Página 8: Anexo I ────────────────────────────────────────────────────
-    // Tabla firmas: celda superior y_raw=145-215 → y_pdflib=627-697
-    // Firma Lucas en celda izquierda, firma cliente en celda derecha
+    // ── Página 8 (612x792) ──────────────────────────────────────────────────
+    // "EL PRESTADOR" empieza en y_raw=496.1
+    // Espacio firma arriba: y_raw=416-493 → y_pdflib = 792-493=299 a 792-416=376
     const p8 = pages[7];
 
-    const lDims8 = lucasImg.scale(0.20);
-    p8.drawImage(lucasImg, { x: 63.8, y: 637, width: lDims8.width, height: lDims8.height });
-    p8.drawText(fechaStr.split(",")[0], { x: 70, y: 842 - 670, size: 7, font, color: rgb(0.15,0.15,0.15) });
+    const lDims8 = lucasImg.scale(0.22);
+    p8.drawImage(lucasImg, { x: 70.8, y: 305, width: lDims8.width, height: lDims8.height });
+    p8.drawText(fechaStr.split(",")[0], { x: 100, y: 792 - 542, size: 7, font, color: rgb(0.15,0.15,0.15) });
+
+    const cDims8 = cli2Img.scaleToFit(200, 60);
+    p8.drawImage(cli2Img, { x: 306, y: 305, width: cDims8.width, height: cDims8.height });
+    p8.drawText(nombre, { x: 306, y: 792 - 508, size: 7.5, font: fontBold, color: rgb(0.1,0.1,0.1) });
+    if (nif) p8.drawText(nif, { x: 306, y: 792 - 519, size: 7, font, color: rgb(0.2,0.2,0.2) });
+    p8.drawText(fechaStr.split(",")[0], { x: 306, y: 792 - 540, size: 7, font, color: rgb(0.2,0.2,0.2) });
 
     const cDims8 = cli2Img.scaleToFit(200, 50);
-    p8.drawImage(cli2Img, { x: 315.8, y: 637, width: cDims8.width, height: cDims8.height });
+    p8.drawImage(cli2Img, { x: 315.8, y: 220, width: cDims8.width, height: cDims8.height });
     p8.drawText(nombre, { x: 315.8, y: 842 - 640, size: 7.5, font: fontBold, color: rgb(0.1,0.1,0.1) });
     if (nif) p8.drawText(nif, { x: 315.8, y: 842 - 650, size: 7, font, color: rgb(0.2,0.2,0.2) });
     p8.drawText(fechaStr.split(",")[0], { x: 315.8, y: 842 - 670, size: 7, font, color: rgb(0.2,0.2,0.2) });
