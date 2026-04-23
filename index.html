@@ -509,8 +509,8 @@ function addSigZoneOverlay(wrapper, pageNum, vp, scale) {
   // Pág 7: espacio en blanco entre y_raw=380 y línea y_raw=484 → cliente lado derecho x=315
   // Pág 8: espacio en blanco entre y_raw=530 y línea y_raw=625 → cliente lado derecho x=315
   const zones = {
-    7: { x: 306, yTop: 420, yBot: 530, w: 220 },
-    8: { x: 306, yTop: 535, yBot: 630, w: 220 },
+    7: { x: 315.8, yTop: 412, yBot: 484, w: 230 },
+    8: { x: 315.8, yTop: 568, yBot: 626, w: 230 },
   };
   const z = zones[pageNum];
   if (!z) return;
@@ -633,36 +633,35 @@ document.getElementById("btn-sign").addEventListener("click", async () => {
 
     // ── Página 7 (índice 6) ──────────────────────────────────────────────────
     // Espacio firma: entre y_raw=380 y línea separadora y_raw=484
-    // ── Página 7: contrato (US Letter 612x792) ─────────────────────────────
-    // Firmas debajo de sección 17, espacio y_raw 420-530
-    // y_pdflib = 792 - y_raw → firmas en y_pdflib=270
+    // ── Página 7: contrato (A4 596x842) ────────────────────────────────────
+    // Espacio firma: y_raw=412 a y_raw=484 (antes de EL PRESTADOR en y=486)
+    // y_pdflib = 842 - y_raw → zona: 358 a 430
     const p7 = pages[6];
-    const pH = 792;
 
-    const lDims7 = lucasImg.scale(0.20);
-    p7.drawImage(lucasImg, { x: 36, y: 270, width: lDims7.width, height: lDims7.height });
-    p7.drawText(fechaStr.split(",")[0], { x: 70, y: 255, size: 7, font, color: rgb(0.15,0.15,0.15) });
+    const lDims7 = lucasImg.scale(0.22);
+    p7.drawImage(lucasImg, { x: 63.8, y: 370, width: lDims7.width, height: lDims7.height });
+    p7.drawText(fechaStr.split(",")[0], { x: 100, y: 842 - 528, size: 7, font, color: rgb(0.15,0.15,0.15) });
 
-    const cDims7 = cli1Img.scaleToFit(180, lDims7.height);
-    p7.drawImage(cli1Img, { x: 306, y: 270, width: cDims7.width, height: cDims7.height });
-    p7.drawText(nombre, { x: 306, y: 264, size: 7.5, font: fontBold, color: rgb(0.1,0.1,0.1) });
-    if (nif) p7.drawText(nif, { x: 306, y: 256, size: 7, font, color: rgb(0.2,0.2,0.2) });
-    p7.drawText(fechaStr.split(",")[0], { x: 306, y: 248, size: 7, font, color: rgb(0.2,0.2,0.2) });
+    const cDims7 = cli1Img.scaleToFit(200, 60);
+    p7.drawImage(cli1Img, { x: 315.8, y: 370, width: cDims7.width, height: cDims7.height });
+    p7.drawText(nombre, { x: 315.8, y: 842 - 498, size: 7.5, font: fontBold, color: rgb(0.1,0.1,0.1) });
+    if (nif) p7.drawText(nif, { x: 315.8, y: 842 - 508, size: 7, font, color: rgb(0.2,0.2,0.2) });
+    p7.drawText(fechaStr.split(",")[0], { x: 315.8, y: 842 - 528, size: 7, font, color: rgb(0.2,0.2,0.2) });
 
-    // ── Página 8: Anexo I ────────────────────────────────────────────────────
-    // Firmas debajo de última Fecha: (y_raw=531) → espacio y_raw 535-630
-    // y_pdflib = 792 - 630 = 162
+    // ── Página 8: Anexo I (A4 596x842) ──────────────────────────────────────
+    // Espacio firma: y_raw=568 a y_raw=628 (antes de EL PRESTADOR en y=628)
+    // y_pdflib = 842 - y_raw → zona: 214 a 274
     const p8 = pages[7];
 
-    const lDims8 = lucasImg.scale(0.20);
-    p8.drawImage(lucasImg, { x: 36, y: 168, width: lDims8.width, height: lDims8.height });
-    p8.drawText(fechaStr.split(",")[0], { x: 70, y: 155, size: 7, font, color: rgb(0.15,0.15,0.15) });
+    const lDims8 = lucasImg.scale(0.22);
+    p8.drawImage(lucasImg, { x: 63.8, y: 220, width: lDims8.width, height: lDims8.height });
+    p8.drawText(fechaStr.split(",")[0], { x: 100, y: 842 - 670, size: 7, font, color: rgb(0.15,0.15,0.15) });
 
-    const cDims8 = cli2Img.scaleToFit(180, lDims8.height);
-    p8.drawImage(cli2Img, { x: 306, y: 168, width: cDims8.width, height: cDims8.height });
-    p8.drawText(nombre, { x: 306, y: 162, size: 7.5, font: fontBold, color: rgb(0.1,0.1,0.1) });
-    if (nif) p8.drawText(nif, { x: 306, y: 154, size: 7, font, color: rgb(0.2,0.2,0.2) });
-    p8.drawText(fechaStr.split(",")[0], { x: 306, y: 146, size: 7, font, color: rgb(0.2,0.2,0.2) });
+    const cDims8 = cli2Img.scaleToFit(200, 50);
+    p8.drawImage(cli2Img, { x: 315.8, y: 220, width: cDims8.width, height: cDims8.height });
+    p8.drawText(nombre, { x: 315.8, y: 842 - 640, size: 7.5, font: fontBold, color: rgb(0.1,0.1,0.1) });
+    if (nif) p8.drawText(nif, { x: 315.8, y: 842 - 650, size: 7, font, color: rgb(0.2,0.2,0.2) });
+    p8.drawText(fechaStr.split(",")[0], { x: 315.8, y: 842 - 670, size: 7, font, color: rgb(0.2,0.2,0.2) });
 
     // ── Metadata ─────────────────────────────────────────────────────────────
     pdfLibDoc.setTitle("Contrato firmado — " + nombre);
