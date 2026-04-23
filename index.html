@@ -633,28 +633,32 @@ document.getElementById("btn-sign").addEventListener("click", async () => {
 
     // ── Página 7 (612x792) ──────────────────────────────────────────────────
     // Espacio firma: y_raw=110-167 → y_pdflib=625-682
+    // Ambas firmas al mismo Y, columnas izq (62.7) y der (314)
     const p7 = pages[6];
+    const sigY7 = 637; // y_pdflib base — ambas al mismo nivel
 
-    const lDims7 = lucasImg.scale(0.18);
-    p7.drawImage(lucasImg, { x: 62.7, y: 630, width: lDims7.width, height: lDims7.height });
+    const lDims7 = lucasImg.scale(0.16);
+    p7.drawImage(lucasImg, { x: 62.7, y: sigY7, width: lDims7.width, height: lDims7.height });
     p7.drawText(fechaStr.split(",")[0], { x: 69.7, y: 792 - 217, size: 7, font, color: rgb(0.2,0.2,0.2) });
 
-    const cDims7 = cli1Img.scaleToFit(220, 50);
-    p7.drawImage(cli1Img, { x: 314, y: 630, width: cDims7.width, height: cDims7.height });
+    const cDims7 = cli1Img.scaleToFit(220, lDims7.height);
+    p7.drawImage(cli1Img, { x: 314, y: sigY7, width: cDims7.width, height: cDims7.height });
     p7.drawText(nombre, { x: 314, y: 792 - 181, size: 7.5, font: fontBold, color: rgb(0.1,0.1,0.1) });
     if (nif) p7.drawText(nif, { x: 314, y: 792 - 193, size: 7, font, color: rgb(0.2,0.2,0.2) });
     p7.drawText(fechaStr.split(",")[0], { x: 314, y: 792 - 217, size: 7, font, color: rgb(0.2,0.2,0.2) });
 
     // ── Página 8 (612x792) ──────────────────────────────────────────────────
     // Espacio firma: y_raw=590-637 → y_pdflib=155-202
+    // Ambas firmas al mismo Y
     const p8 = pages[7];
+    const sigY8 = 162; // y_pdflib base — ambas al mismo nivel
 
-    const lDims8 = lucasImg.scale(0.18);
-    p8.drawImage(lucasImg, { x: 62.7, y: 158, width: lDims8.width, height: lDims8.height });
+    const lDims8 = lucasImg.scale(0.16);
+    p8.drawImage(lucasImg, { x: 62.7, y: sigY8, width: lDims8.width, height: lDims8.height });
     p8.drawText(fechaStr.split(",")[0], { x: 69.7, y: 792 - 687, size: 7, font, color: rgb(0.2,0.2,0.2) });
 
-    const cDims8 = cli2Img.scaleToFit(220, 42);
-    p8.drawImage(cli2Img, { x: 314, y: 158, width: cDims8.width, height: cDims8.height });
+    const cDims8 = cli2Img.scaleToFit(220, lDims8.height);
+    p8.drawImage(cli2Img, { x: 314, y: sigY8, width: cDims8.width, height: cDims8.height });
     p8.drawText(nombre, { x: 314, y: 792 - 651, size: 7.5, font: fontBold, color: rgb(0.1,0.1,0.1) });
     if (nif) p8.drawText(nif, { x: 314, y: 792 - 663, size: 7, font, color: rgb(0.2,0.2,0.2) });
     p8.drawText(fechaStr.split(",")[0], { x: 314, y: 792 - 687, size: 7, font, color: rgb(0.2,0.2,0.2) });
