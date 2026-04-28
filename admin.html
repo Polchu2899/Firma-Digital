@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FirmaDoc Admin · Lucas y Leo Digital</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      oklch(12% 0.01 260);
+    --bg2:     oklch(16% 0.015 260);
+    --bg3:     oklch(20% 0.018 260);
+    --border:  oklch(28% 0.02 260);
+    --accent:  oklch(65% 0.18 38);
+    --accent2: oklch(55% 0.16 38);
+    --text:    oklch(92% 0.005 260);
+    --text2:   oklch(65% 0.01 260);
+    --text3:   oklch(40% 0.01 260);
+    --success: oklch(65% 0.15 145);
+    --danger:  oklch(62% 0.18 20);
+    --radius:  12px;
+    --shadow:  0 4px 32px oklch(0% 0 0 / 0.5);
+  }
+
+  html { font-family: 'DM Sans', sans-serif; font-size: 16px; }
+  body { background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── LOGIN ── */
+  .login-wrap {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background:
+      radial-gradient(ellipse 60% 40% at 70% 20%, oklch(65% 0.18 38 / 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 20% 80%, oklch(55% 0.12 260 / 0.06) 0%, transparent 60%),
+      var(--bg);
+  }
+  .login-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: var(--shadow);
+  }
+  .login-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: -0.03em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-dot { width: 10px; height: 10px; background: var(--accent); border-radius: 50%; }
+  .login-sub { font-size: 0.85rem; color: var(--text3); margin-bottom: 36px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .form-group label { font-size: 0.78rem; color: var(--text2); font-weight: 500; }
+  .form-group input {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 11px 14px;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-group input:focus { border-color: var(--accent); }
+  .btn-login {
+    width: 100%;
+    padding: 13px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+    letter-spacing: -0.01em;
+  }
+  .btn-login:hover { background: var(--accent2); transform: translateY(-1px); }
+  .btn-login:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .login-error {
+    font-size: 0.82rem;
+    color: var(--danger);
+    margin-top: 12px;
+    text-align: center;
+    min-height: 20px;
+  }
+
+  /* ── APP ── */
+  .app { display: none; flex-direction: column; min-height: 100vh; }
+  .app.visible { display: flex; }
+
+  /* TOPBAR */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    height: 60px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-shrink: 0;
+  }
+  .topbar-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.05rem;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .badge-admin {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: oklch(65% 0.18 38 / 0.15);
+    color: var(--accent);
+    border: 1px solid oklch(65% 0.18 38 / 0.3);
+  }
+  .btn-logout {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* MAIN */
+  .main { flex: 1; padding: 32px; max-width: 1200px; margin: 0 auto; width: 100%; }
+
+  /* STATS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .stat-label { font-size: 0.72rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 8px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; }
+  .stat-value.orange { color: var(--accent); }
+  .stat-value.green  { color: var(--success); }
+
+  /* HEADER TABLA */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .search-wrap { position: relative; }
+  .search-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+  .search-input {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 14px 8px 36px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    outline: none;
+    width: 240px;
+    transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text3); }
+
+  /* TABLA */
+  .table-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead { background: var(--bg3); }
+  th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 14px 16px;
+    font-size: 0.85rem;
+    color: var(--text2);
+    border-bottom: 1px solid oklch(28% 0.02 260 / 0.5);
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: oklch(20% 0.015 260 / 0.5); }
+  .td-name { font-weight: 600; color: var(--text); font-size: 0.9rem; }
+  .td-mono { font-family: 'DM Mono', monospace; font-size: 0.78rem; }
+
+  /* BADGES */
+  .badge-yes { background: oklch(65% 0.15 145 / 0.15); color: var(--success); border: 1px solid oklch(65% 0.15 145 / 0.3); padding: 3px 8px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+  .badge-no  { background: oklch(62% 0.18 20 / 0.12); color: var(--danger); border: 1px solid oklch(62% 0.18 20 / 0.25); padding: 3px 8px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+
+  /* BOTONES ACCIÓN */
+  .btn-dl {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 7px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .btn-dl:hover { background: var(--accent2); transform: translateY(-1px); }
+  .btn-detail {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 6px 12px;
+    border-radius: 7px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .btn-detail:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* MODAL DETALLE */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: oklch(0% 0 0 / 0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+  .modal-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.15s;
+  }
+  .modal-close:hover { color: var(--text); }
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid oklch(28% 0.02 260 / 0.5);
+    font-size: 0.85rem;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-key { color: var(--text3); font-weight: 500; flex-shrink: 0; }
+  .detail-val { color: var(--text2); text-align: right; word-break: break-all; font-family: monospace; font-size: 0.78rem; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+  /* EMPTY */
+  .empty-state {
+    text-align: center;
+    padding: 64px 32px;
+    color: var(--text3);
+  }
+  .empty-state svg { margin: 0 auto 16px; display: block; opacity: 0.3; }
+  .empty-state p { font-size: 0.9rem; }
+
+  /* LOADING */
+  .loading-row td { text-align: center; padding: 48px; color: var(--text3); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    box-shadow: var(--shadow);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 999;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 768px) {
+    .main { padding: 16px; }
+    .topbar { padding: 0 16px; }
+    .search-input { width: 160px; }
+    th:nth-child(3), td:nth-child(3),
+    th:nth-child(4), td:nth-child(4) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="logo-dot"></span>
+      FirmaDoc Admin
+    </div>
+    <p class="login-sub">Panel de gestión · Lucas y Leo Digital</p>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="inp-email" placeholder="info@lucasyleodigital.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label>Contraseña</label>
+      <input type="password" id="inp-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-login" id="btn-login">Entrar</button>
+    <p class="login-error" id="login-error"></p>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+
+  <header class="topbar">
+    <div class="topbar-logo">
+      <span class="logo-dot"></span>
+      FirmaDoc
+    </div>
+    <div class="topbar-right">
+      <span class="badge-admin">Admin</span>
+      <span style="font-size:0.8rem;color:var(--text3)" id="user-email"></span>
+      <button class="btn-logout" id="btn-logout">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Salir
+      </button>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total contratos</div>
+        <div class="stat-value orange" id="stat-total">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Este mes</div>
+        <div class="stat-value" id="stat-month">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Consienten portfolio</div>
+        <div class="stat-value green" id="stat-portfolio">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Último contrato</div>
+        <div class="stat-value" id="stat-last" style="font-size:1rem;padding-top:6px">—</div>
+      </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="section-header">
+      <h2 class="section-title">Contratos firmados</h2>
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" class="search-input" id="search" placeholder="Buscar cliente...">
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Email</th>
+            <th>NIF/CIF</th>
+            <th>Fecha firma</th>
+            <th>Portfolio</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL DETALLE -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <button class="modal-close" id="modal-close">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="modal-title" id="modal-title">Detalle del contrato</div>
+    <div id="modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn-dl" id="modal-dl">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Descargar PDF firmado
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+// ── FIREBASE ──────────────────────────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey:            "AIzaSyCAAKXMUdfYVi0NKE2fIR-McQM8aonO5s4",
+  authDomain:        "firma-digital-7ca33.firebaseapp.com",
+  projectId:         "firma-digital-7ca33",
+  storageBucket:     "firma-digital-7ca33.firebasestorage.app",
+  messagingSenderId: "673241497550",
+  appId:             "1:673241497550:web:f80286a3d3ba239e30b59f"
+});
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+auth.onAuthStateChanged(user => {
+  if (user) {
+    document.getElementById('login-wrap').style.display = 'none';
+    document.getElementById('app').classList.add('visible');
+    document.getElementById('user-email').textContent = user.email;
+    loadFirmas();
+  } else {
+    document.getElementById('login-wrap').style.display = 'flex';
+    document.getElementById('app').classList.remove('visible');
+  }
+});
+
+document.getElementById('btn-login').addEventListener('click', async () => {
+  const email = document.getElementById('inp-email').value.trim();
+  const pass  = document.getElementById('inp-pass').value;
+  const err   = document.getElementById('login-error');
+  const btn   = document.getElementById('btn-login');
+  err.textContent = '';
+  btn.disabled = true;
+  btn.textContent = 'Entrando...';
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+  } catch (e) {
+    err.textContent = 'Email o contraseña incorrectos';
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+  }
+});
+
+document.getElementById('inp-pass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('btn-login').click();
+});
+
+document.getElementById('btn-logout').addEventListener('click', () => auth.signOut());
+
+// ── DATA ──────────────────────────────────────────────────────────────────────
+let allFirmas = [];
+let currentDoc = null;
+
+async function loadFirmas() {
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+
+  try {
+    const snap = await db.collection('firmas').orderBy('creadoEn', 'desc').get();
+    allFirmas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderTable(allFirmas);
+    updateStats(allFirmas);
+  } catch (e) {
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="6">Error al cargar datos</td></tr>';
+  }
+}
+
+function updateStats(firmas) {
+  document.getElementById('stat-total').textContent = firmas.length;
+
+  const now = new Date();
+  const thisMonth = firmas.filter(f => {
+    if (!f.creadoEn) return false;
+    const d = f.creadoEn.toDate();
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
+  document.getElementById('stat-month').textContent = thisMonth;
+
+  const consiente = firmas.filter(f => !f.oposicionPortfolio).length;
+  document.getElementById('stat-portfolio').textContent = consiente;
+
+  if (firmas.length > 0 && firmas[0].creadoEn) {
+    const last = firmas[0].creadoEn.toDate();
+    document.getElementById('stat-last').textContent =
+      last.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+}
+
+function renderTable(firmas) {
+  const tbody = document.getElementById('tbody');
+  if (firmas.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6">
+      <div class="empty-state">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <p>No hay contratos firmados todavía</p>
+      </div>
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = firmas.map(f => {
+    const fecha = f.fechaFirma ? f.fechaFirma.toDate().toLocaleDateString('es-ES', {
+      day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    }) : '—';
+    const portfolio = f.oposicionPortfolio
+      ? '<span class="badge-no">Se opone</span>'
+      : '<span class="badge-yes">Consiente</span>';
+
+    return `<tr>
+      <td class="td-name">${esc(f.nombre || '—')}</td>
+      <td>${esc(f.email || '—')}</td>
+      <td class="td-mono">${esc(f.nif || '—')}</td>
+      <td style="font-size:0.8rem">${fecha}</td>
+      <td>${portfolio}</td>
+      <td>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn-dl" onclick="downloadPDF('${f.id}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            PDF
+          </button>
+          <button class="btn-detail" onclick="openDetail('${f.id}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Detalle
+          </button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── BÚSQUEDA ──────────────────────────────────────────────────────────────────
+document.getElementById('search').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  const filtered = allFirmas.filter(f =>
+    (f.nombre || '').toLowerCase().includes(q) ||
+    (f.email  || '').toLowerCase().includes(q) ||
+    (f.nif    || '').toLowerCase().includes(q)
+  );
+  renderTable(filtered);
+});
+
+// ── DESCARGA PDF ──────────────────────────────────────────────────────────────
+async function downloadPDF(id) {
+  const firma = allFirmas.find(f => f.id === id);
+  if (!firma || !firma.pdfFirmadoBase64) {
+    showToast('No hay PDF disponible para este contrato');
+    return;
+  }
+  try {
+    const binary = atob(firma.pdfFirmadoBase64);
+    const bytes  = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `contrato_firmado_${(firma.nombre || 'cliente').replace(/\s+/g,'_')}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('PDF descargado ✓');
+  } catch (e) {
+    showToast('Error al descargar el PDF');
+  }
+}
+
+// ── DETALLE MODAL ─────────────────────────────────────────────────────────────
+function openDetail(id) {
+  const f = allFirmas.find(x => x.id === id);
+  if (!f) return;
+  currentDoc = f;
+
+  const fecha = f.fechaFirma ? f.fechaFirma.toDate().toLocaleString('es-ES') : '—';
+  const creado = f.creadoEn ? f.creadoEn.toDate().toLocaleString('es-ES') : '—';
+
+  document.getElementById('modal-title').textContent = f.nombre || 'Sin nombre';
+  document.getElementById('modal-body').innerHTML = `
+    ${row('Nombre',      f.nombre || '—')}
+    ${row('Email',       f.email  || '—')}
+    ${row('NIF/CIF',     f.nif    || '—')}
+    ${row('Fecha firma', fecha)}
+    ${row('Guardado en Firebase', creado)}
+    ${row('Archivo',     f.nombreArchivo || '—')}
+    ${row('Oposición portfolio', f.oposicionPortfolio ? 'Sí — Se opone' : 'No — Consiente')}
+    ${row('Hash SHA-256', f.hashDocOriginal ? f.hashDocOriginal.substring(0,32)+'…' : '—')}
+    ${row('PDF en Firestore', f.pdfFirmadoBase64 ? '✓ Disponible (' + Math.round(f.pdfFirmadoBase64.length/1024) + ' KB)' : '✗ No disponible')}
+  `;
+  document.getElementById('modal').classList.add('open');
+}
+
+function row(key, val) {
+  return `<div class="detail-row">
+    <span class="detail-key">${key}</span>
+    <span class="detail-val">${esc(String(val))}</span>
+  </div>`;
+}
+
+document.getElementById('modal-close').addEventListener('click', () =>
+  document.getElementById('modal').classList.remove('open'));
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal'))
+    document.getElementById('modal').classList.remove('open');
+});
+document.getElementById('modal-dl').addEventListener('click', () => {
+  if (currentDoc) downloadPDF(currentDoc.id);
+});
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function esc(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
