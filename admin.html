@@ -768,9 +768,14 @@ function renderPendientes() {
       <td>${estado}</td>
       <td style="font-size:0.8rem">${fecha}</td>
       <td>
-        <button class="btn-detail" onclick="copyLink('${link}')">
-          Copiar enlace
-        </button>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn-detail" onclick="copyLink('${link}')">
+            Copiar enlace
+          </button>
+          <button class="btn-detail" style="border-color:oklch(62% 0.18 20 / 0.4);color:var(--danger)" onclick="deletePendiente('${p.id}')">
+            Eliminar
+          </button>
+        </div>
       </td>
     </tr>`;
   }).join('');
@@ -778,6 +783,18 @@ function renderPendientes() {
 
 function copyLink(link) {
   navigator.clipboard.writeText(link).then(() => showToast('Enlace copiado ✓'));
+}
+
+async function deletePendiente(id) {
+  const p = allPendientes.find(x => x.id === id);
+  if (!confirm(`¿Eliminar el enlace de "${p ? p.nombre : id}"? Esta acción no se puede deshacer.`)) return;
+  try {
+    await db.collection('contratosPendientes').doc(id).delete();
+    showToast('Enlace eliminado ✓');
+    loadPendientes();
+  } catch (e) {
+    showToast('Error al eliminar el enlace');
+  }
 }
 
 // ── DATA ──────────────────────────────────────────────────────────────────────
@@ -855,10 +872,26 @@ function renderTable(firmas) {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             Detalle
           </button>
+          <button class="btn-detail" style="border-color:oklch(62% 0.18 20 / 0.4);color:var(--danger)" onclick="deleteFirma('${f.id}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Eliminar
+          </button>
         </div>
       </td>
     </tr>`;
   }).join('');
+}
+
+async function deleteFirma(id) {
+  const f = allFirmas.find(x => x.id === id);
+  if (!confirm(`¿Eliminar el contrato firmado de "${f ? f.nombre : id}"? Esta acción no se puede deshacer.`)) return;
+  try {
+    await db.collection('firmas').doc(id).delete();
+    showToast('Contrato eliminado ✓');
+    loadFirmas();
+  } catch (e) {
+    showToast('Error al eliminar el contrato');
+  }
 }
 
 // ── BÚSQUEDA ──────────────────────────────────────────────────────────────────

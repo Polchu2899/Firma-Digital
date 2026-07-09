@@ -782,36 +782,35 @@ document.getElementById("btn-sign").addEventListener("click", async () => {
     // ── Firma Cliente 2 (pág 8) ───────────────────────────────────────────────
     const cli2Bytes = Uint8Array.from(atob(sig2Data.split(",")[1]), c => c.charCodeAt(0));
     const cli2Img   = await pdfLibDoc.embedPng(cli2Bytes);
-    // ── Página 7 (612x792) ──────────────────────────────────────────────────
-    // "En prueba" acaba y=595.6 → espacio firma y_raw=600-750 → y_pdflib=42-192
-    // Ambas firmas al mismo sigY7
+    // ── Página 7: firmas del contrato general ──────────────────────────────
+    // Página real 596x842pt. Línea de firma en y_top=484.5 → y_pdflib=357.5
     const p7 = pages[6];
-    const sigY7 = 72;
+    const sigY7 = 362; // justo encima de la línea de firma
 
     const lDims7 = lucasImg.scale(0.22);
     p7.drawImage(lucasImg, { x: 70.8, y: sigY7, width: lDims7.width, height: lDims7.height });
-    p7.drawText(fechaStr.split(",")[0], { x: 70.8, y: 792 - 730, size: 7, font, color: rgb(0.2,0.2,0.2) });
+    p7.drawText(fechaStr.split(",")[0], { x: 97, y: 316.2, size: 7, font, color: rgb(0.2,0.2,0.2) });
 
-    const cDims7 = cli1Img.scaleToFit(270, lDims7.height);
-    p7.drawImage(cli1Img, { x: 306, y: sigY7, width: cDims7.width, height: cDims7.height });
-    p7.drawText(nombre, { x: 306, y: 792 - 700, size: 7.5, font: fontBold, color: rgb(0.1,0.1,0.1) });
-    if (nif) p7.drawText(nif, { x: 306, y: 792 - 712, size: 7, font, color: rgb(0.2,0.2,0.2) });
-    p7.drawText(fechaStr.split(",")[0], { x: 306, y: 792 - 730, size: 7, font, color: rgb(0.2,0.2,0.2) });
+    const cDims7 = cli1Img.scaleToFit(195, lDims7.height);
+    p7.drawImage(cli1Img, { x: 316, y: sigY7, width: cDims7.width, height: cDims7.height });
+    p7.drawText(nombre, { x: 412, y: 336.9, size: 7.5, font: fontBold, color: rgb(0.1,0.1,0.1) });
+    if (nif) p7.drawText(nif, { x: 355, y: 326.6, size: 7, font, color: rgb(0.2,0.2,0.2) });
+    p7.drawText(fechaStr.split(",")[0], { x: 349, y: 316.2, size: 7, font, color: rgb(0.2,0.2,0.2) });
 
-    // ── Página 8 (612x792) ──────────────────────────────────────────────────
-    // "EL PRESTADOR" empieza y=493.3 → espacio firma y_raw=440-491 → y_pdflib=301-352
+    // ── Página 8: firmas del Anexo I ────────────────────────────────────────
+    // Línea de firma en y_top=625.5 → y_pdflib=216.5
     const p8 = pages[7];
-    const sigY8 = 303;
+    const sigY8 = 220; // justo encima de la línea de firma
 
     const lDims8 = lucasImg.scale(0.18);
     p8.drawImage(lucasImg, { x: 70.8, y: sigY8, width: lDims8.width, height: lDims8.height });
-    p8.drawText(fechaStr.split(",")[0], { x: 70.8, y: 792 - 537, size: 7, font, color: rgb(0.2,0.2,0.2) });
+    p8.drawText(fechaStr.split(",")[0], { x: 97, y: 174.4, size: 7, font, color: rgb(0.2,0.2,0.2) });
 
-    const cDims8 = cli2Img.scaleToFit(270, lDims8.height);
-    p8.drawImage(cli2Img, { x: 306, y: sigY8, width: cDims8.width, height: cDims8.height });
-    p8.drawText(nombre, { x: 306, y: 792 - 505, size: 7.5, font: fontBold, color: rgb(0.1,0.1,0.1) });
-    if (nif) p8.drawText(nif, { x: 306, y: 792 - 516, size: 7, font, color: rgb(0.2,0.2,0.2) });
-    p8.drawText(fechaStr.split(",")[0], { x: 306, y: 792 - 537, size: 7, font, color: rgb(0.2,0.2,0.2) });
+    const cDims8 = cli2Img.scaleToFit(195, lDims8.height);
+    p8.drawImage(cli2Img, { x: 316, y: sigY8, width: cDims8.width, height: cDims8.height });
+    p8.drawText(nombre, { x: 412, y: 195.1, size: 7.5, font: fontBold, color: rgb(0.1,0.1,0.1) });
+    if (nif) p8.drawText(nif, { x: 355, y: 184.7, size: 7, font, color: rgb(0.2,0.2,0.2) });
+    p8.drawText(fechaStr.split(",")[0], { x: 349, y: 174.4, size: 7, font, color: rgb(0.2,0.2,0.2) });
 
     // ── Datos del cliente (pág. 1) y Anexo I (pág. 8), si vienen de un enlace ──
     if (shareToken && tokenData) {
