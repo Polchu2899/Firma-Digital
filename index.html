@@ -584,6 +584,105 @@ async function sha256(buffer) {
   return Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2,"0")).join("");
 }
 
+// ── RELLENO DE DATOS DEL CLIENTE Y ANEXO I ─────────────────────────────────────
+function formatFechaCorta(iso) {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  if (!y || !m || !d) return iso;
+  return `${d}/${m}/${y}`;
+}
+
+function formatEuro(n) {
+  if (n === null || n === undefined || isNaN(n)) return "";
+  return Number(n).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fitTextSize(font, text, maxWidth, baseSize, minSize = 6) {
+  let size = baseSize;
+  while (size > minSize && font.widthOfTextAtSize(text, size) > maxWidth) size -= 0.5;
+  return size;
+}
+
+function wrapTextLines(font, text, maxWidth, size, maxLines) {
+  const words = (text || "").split(/\s+/).filter(Boolean);
+  const lines = [];
+  let current = "";
+  for (const word of words) {
+    const test = current ? current + " " + word : word;
+    if (font.widthOfTextAtSize(test, size) <= maxWidth) {
+      current = test;
+    } else {
+      if (current) lines.push(current);
+      current = word;
+      if (lines.length >= maxLines) break;
+    }
+  }
+  if (current && lines.length < maxLines) lines.push(current);
+  if (lines.length >= maxLines) {
+    const usedWords = lines.join(" ").split(/\s+/).length;
+    if (usedWords < words.length) {
+      let last = lines[maxLines - 1];
+      while (last.length > 0 && font.widthOfTextAtSize(last + "…", size) > maxWidth) {
+        last = last.slice(0, -1);
+      }
+      lines[maxLines - 1] = last + "…";
+    }
+  }
+  return lines;
+}
+
+// Coordenadas medidas con pdfplumber sobre el PDF real (596x842pt / A4)
+function fillContractFields(p1, p8b, font, fontBold, rgb, d) {
+  const gray = rgb(0.15, 0.15, 0.15);
+  const drawField = (page, text, x, y, maxWidth, size = 8) => {
+    if (!text && text !== 0) return;
+    const str = String(text);
+    const s = fitTextSize(font, str, maxWidth, size);
+    page.drawText(str, { x, y, size: s, font, color: gray });
+  };
+
+  // ── Página 1: identificación del cliente ──
+  drawField(p1, d.nombre, 210, 304.3, 220);
+  drawField(p1, d.nif, 210, 285.1, 220);
+  drawField(p1, d.email, 210, 265.9, 220);
+  drawField(p1, d.telefono, 210, 246.8, 220);
+  drawField(p1, d.direccionFiscal, 210, 227.6, 220);
+  drawField(p1, d.representanteLegal, 210, 208.4, 220);
+
+  // ── Página 8: Anexo I — Documento de Alcance del Proyecto ──
+  drawField(p8b, d.nombreProyecto, 210, 674.2, 220);
+  drawField(p8b, formatFechaCorta(d.fechaInicioEstimada), 210, 655.1, 220);
+  drawField(p8b, formatFechaCorta(d.fechaEntregaEstimada), 210, 635.9, 220);
+  drawField(p8b, d.referenciaPresupuesto, 210, 616.7, 220);
+
+  if (d.descripcionServicio) {
+    const lines = wrapTextLines(font, d.descripcionServicio, 236, 8, 4);
+    const ys = [572.3, 556.8, 541.3, 525.8];
+    lines.forEach((line, i) => p8b.drawText(line, { x: 63, y: ys[i], size: 8, font, color: gray }));
+  }
+
+  if (d.importeTotal !== null && d.importeTotal !== undefined && !isNaN(d.importeTotal)) {
+    const total       = Number(d.importeTotal);
+    const iva         = total * 0.21;
+    const totalConIva = total + iva;
+    const pago        = totalConIva / 2;
+    drawField(p8b, formatEuro(total),       217, 477.7, 53, 7.5);
+    drawField(p8b, formatEuro(iva),         217, 458.6, 53, 7.5);
+    drawField(p8b, formatEuro(totalConIva), 217, 439.4, 53, 7.5);
+    drawField(p8b, formatEuro(pago),        217, 420.2, 53, 7.5);
+    drawField(p8b, formatEuro(pago),        217, 401.0, 53, 7.5);
+  }
+  drawField(p8b, formatFechaCorta(d.fechaPago1), 315, 420.2, 55, 7.5);
+  drawField(p8b, formatFechaCorta(d.fechaPago2), 315, 401.0, 55, 7.5);
+
+  const rondasX = { "1": 61, "2": 117.6, "ilimitadas": 238.7, "otro": 303.6 };
+  const markX = rondasX[d.rondasRevision];
+  if (markX) p8b.drawText("X", { x: markX, y: 336.9, size: 8, font: fontBold, color: gray });
+  if (d.rondasRevision === "otro") drawField(p8b, d.rondasOtroTexto, 339, 336.9, 58, 7.5);
+
+  drawField(p8b, d.observaciones, 63, 277.2, 236, 8);
+}
+
 // ── BOTÓN FIRMAR ──────────────────────────────────────────────────────────────
 document.getElementById("btn-sign").addEventListener("click", async () => {
   if (!hasSig) return;
@@ -679,6 +778,12 @@ document.getElementById("btn-sign").addEventListener("click", async () => {
     p8.drawText(nombre, { x: 306, y: 792 - 505, size: 7.5, font: fontBold, color: rgb(0.1,0.1,0.1) });
     if (nif) p8.drawText(nif, { x: 306, y: 792 - 516, size: 7, font, color: rgb(0.2,0.2,0.2) });
     p8.drawText(fechaStr.split(",")[0], { x: 306, y: 792 - 537, size: 7, font, color: rgb(0.2,0.2,0.2) });
+
+    // ── Datos del cliente (pág. 1) y Anexo I (pág. 8), si vienen de un enlace ──
+    if (shareToken && tokenData) {
+      fillContractFields(pages[0], pages[7], font, fontBold, rgb, { ...tokenData, nombre, email, nif });
+    }
+
     // ── Metadata ─────────────────────────────────────────────────────────────
     pdfLibDoc.setTitle("Contrato firmado — " + nombre);
     pdfLibDoc.setAuthor("Lucas y Leo Digital");
@@ -782,6 +887,7 @@ window.addEventListener("resize", () => { if (pdfDoc) renderAllPages(); });
 const CONTRATO_PDF_URL = "contrato_lucas_leo_digital.docx.pdf";
 const urlParams = new URLSearchParams(location.search);
 const shareToken = urlParams.get("c");
+let tokenData = null;
 
 if (shareToken) initTokenFlow(shareToken);
 
@@ -813,6 +919,7 @@ async function initTokenFlow(token) {
     return;
   }
 
+  tokenData = data;
   document.getElementById("inp-nombre").value = data.nombre || "";
   document.getElementById("inp-email").value  = data.email  || "";
   if (data.nif) document.getElementById("inp-nif").value = data.nif;

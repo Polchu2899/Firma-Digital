@@ -443,21 +443,93 @@
       <h2 class="section-title">Enviar contrato para firmar</h2>
     </div>
     <div class="table-wrap" style="padding:20px;margin-bottom:32px">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end">
+
+      <div class="panel-label" style="font-family:'Syne',sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">Datos del cliente</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
         <div class="form-group" style="margin-bottom:0">
-          <label>Nombre completo</label>
+          <label>Nombre completo *</label>
           <input type="text" id="send-nombre" placeholder="Nombre Apellido">
         </div>
         <div class="form-group" style="margin-bottom:0">
-          <label>Email</label>
+          <label>Email *</label>
           <input type="email" id="send-email" placeholder="cliente@empresa.com">
         </div>
         <div class="form-group" style="margin-bottom:0">
-          <label>NIF/CIF (opcional)</label>
+          <label>NIF/CIF</label>
           <input type="text" id="send-nif" placeholder="12345678A">
         </div>
-        <button class="btn-login" id="btn-send" style="margin-top:0;width:auto;white-space:nowrap;padding:11px 20px">Generar y enviar</button>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Teléfono</label>
+          <input type="text" id="send-telefono" placeholder="+34 600 000 000">
+        </div>
+        <div class="form-group" style="margin-bottom:0;grid-column:span 2">
+          <label>Dirección fiscal</label>
+          <input type="text" id="send-direccion" placeholder="Calle, número, ciudad, provincia">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Representante legal (si aplica)</label>
+          <input type="text" id="send-representante" placeholder="Nombre del representante">
+        </div>
       </div>
+
+      <div class="panel-label" style="font-family:'Syne',sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">Anexo I — Alcance del proyecto</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+        <div class="form-group" style="margin-bottom:0;grid-column:span 2">
+          <label>Nombre del proyecto</label>
+          <input type="text" id="send-proyecto" placeholder="Ej. Web corporativa + SEO">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Fecha inicio estimada</label>
+          <input type="date" id="send-fecha-inicio">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Fecha entrega estimada</label>
+          <input type="date" id="send-fecha-entrega">
+        </div>
+        <div class="form-group" style="margin-bottom:0;grid-column:span 4">
+          <label>Descripción del servicio / Entregables acordados</label>
+          <input type="text" id="send-descripcion" placeholder="Ej. Diseño y desarrollo de sitio web de 5 páginas, SEO on-page, formulario de contacto">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Referencia del presupuesto</label>
+          <input type="text" id="send-referencia" placeholder="PRES-2026-014">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Rondas de revisión</label>
+          <select id="send-rondas" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:0.88rem">
+            <option value="1">1 ronda</option>
+            <option value="2" selected>2 rondas (por defecto)</option>
+            <option value="ilimitadas">Ilimitadas</option>
+            <option value="otro">Otro</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0" id="send-rondas-otro-wrap">
+          <label>Detalle "Otro" (rondas)</label>
+          <input type="text" id="send-rondas-otro" placeholder="Ej. 3 rondas">
+        </div>
+      </div>
+
+      <div class="panel-label" style="font-family:'Syne',sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">Precio y pagos</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+        <div class="form-group" style="margin-bottom:0">
+          <label>Importe total (sin IVA) €</label>
+          <input type="number" id="send-importe" placeholder="1500" step="0.01" min="0">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Fecha pago 1 (arranque, 50%)</label>
+          <input type="date" id="send-fecha-pago1">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Fecha pago 2 (entrega, 50%)</label>
+          <input type="date" id="send-fecha-pago2">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Observaciones / Condiciones especiales</label>
+          <input type="text" id="send-observaciones" placeholder="Opcional">
+        </div>
+      </div>
+
+      <button class="btn-login" id="btn-send" style="margin-top:0;width:auto;white-space:nowrap;padding:11px 24px">Generar y enviar</button>
       <p class="login-error" id="send-error" style="text-align:left"></p>
     </div>
 
@@ -586,6 +658,11 @@ document.getElementById('btn-logout').addEventListener('click', () => auth.signO
 const API_BASE = "https://firma-digital-api.vercel.app";
 const APP_BASE = "https://polchu2899.github.io/Firma-Digital";
 
+document.getElementById('send-rondas').addEventListener('change', e => {
+  document.getElementById('send-rondas-otro-wrap').style.display = e.target.value === 'otro' ? 'flex' : 'none';
+});
+document.getElementById('send-rondas-otro-wrap').style.display = 'none';
+
 document.getElementById('btn-send').addEventListener('click', async () => {
   const nombre = document.getElementById('send-nombre').value.trim();
   const email  = document.getElementById('send-email').value.trim();
@@ -605,9 +682,25 @@ document.getElementById('btn-send').addEventListener('click', async () => {
   const token = crypto.randomUUID().replace(/-/g, '');
   const link  = `${APP_BASE}/index.html?c=${token}`;
 
+  const importeVal = document.getElementById('send-importe').value;
+
   try {
     await db.collection('contratosPendientes').doc(token).set({
       nombre, email, nif: nif || null,
+      telefono:            document.getElementById('send-telefono').value.trim() || null,
+      direccionFiscal:     document.getElementById('send-direccion').value.trim() || null,
+      representanteLegal:  document.getElementById('send-representante').value.trim() || null,
+      nombreProyecto:      document.getElementById('send-proyecto').value.trim() || null,
+      descripcionServicio: document.getElementById('send-descripcion').value.trim() || null,
+      fechaInicioEstimada: document.getElementById('send-fecha-inicio').value || null,
+      fechaEntregaEstimada:document.getElementById('send-fecha-entrega').value || null,
+      referenciaPresupuesto: document.getElementById('send-referencia').value.trim() || null,
+      importeTotal:        importeVal ? parseFloat(importeVal) : null,
+      rondasRevision:      document.getElementById('send-rondas').value,
+      rondasOtroTexto:     document.getElementById('send-rondas-otro').value.trim() || null,
+      observaciones:       document.getElementById('send-observaciones').value.trim() || null,
+      fechaPago1:          document.getElementById('send-fecha-pago1').value || null,
+      fechaPago2:          document.getElementById('send-fecha-pago2').value || null,
       estado: 'pendiente',
       creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
       creadoPor: auth.currentUser.email,
@@ -621,9 +714,13 @@ document.getElementById('btn-send').addEventListener('click', async () => {
     });
     if (!res.ok) throw new Error('send failed');
 
-    document.getElementById('send-nombre').value = '';
-    document.getElementById('send-email').value  = '';
-    document.getElementById('send-nif').value    = '';
+    [
+      'send-nombre','send-email','send-nif','send-telefono','send-direccion','send-representante',
+      'send-proyecto','send-descripcion','send-fecha-inicio','send-fecha-entrega','send-referencia',
+      'send-importe','send-rondas-otro','send-observaciones','send-fecha-pago1','send-fecha-pago2',
+    ].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('send-rondas').value = '2';
+    document.getElementById('send-rondas-otro-wrap').style.display = 'none';
     showToast('Contrato enviado a ' + email + ' ✓');
   } catch (e) {
     console.error(e);
