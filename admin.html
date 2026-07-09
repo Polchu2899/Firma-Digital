@@ -438,6 +438,48 @@
       </div>
     </div>
 
+    <!-- Enviar contrato -->
+    <div class="section-header">
+      <h2 class="section-title">Enviar contrato para firmar</h2>
+    </div>
+    <div class="table-wrap" style="padding:20px;margin-bottom:32px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:end">
+        <div class="form-group" style="margin-bottom:0">
+          <label>Nombre completo</label>
+          <input type="text" id="send-nombre" placeholder="Nombre Apellido">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Email</label>
+          <input type="email" id="send-email" placeholder="cliente@empresa.com">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>NIF/CIF (opcional)</label>
+          <input type="text" id="send-nif" placeholder="12345678A">
+        </div>
+        <button class="btn-login" id="btn-send" style="margin-top:0;width:auto;white-space:nowrap;padding:11px 20px">Generar y enviar</button>
+      </div>
+      <p class="login-error" id="send-error" style="text-align:left"></p>
+    </div>
+
+    <!-- Enlaces enviados -->
+    <div class="section-header">
+      <h2 class="section-title">Enlaces enviados</h2>
+    </div>
+    <div class="table-wrap" style="margin-bottom:32px">
+      <table>
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Email</th>
+            <th>Estado</th>
+            <th>Enviado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-pendientes"></tbody>
+      </table>
+    </div>
+
     <!-- Tabla -->
     <div class="section-header">
       <h2 class="section-title">Contratos firmados</h2>
@@ -510,6 +552,7 @@ auth.onAuthStateChanged(user => {
     document.getElementById('app').classList.add('visible');
     document.getElementById('user-email').textContent = user.email;
     loadFirmas();
+    loadPendientes();
   } else {
     document.getElementById('login-wrap').style.display = 'flex';
     document.getElementById('app').classList.remove('visible');
@@ -538,6 +581,107 @@ document.getElementById('inp-pass').addEventListener('keydown', e => {
 });
 
 document.getElementById('btn-logout').addEventListener('click', () => auth.signOut());
+
+// ── ENVÍO DE CONTRATO ────────────────────────────────────────────────────────
+const API_BASE = "https://firma-digital-api.vercel.app";
+const APP_BASE = "https://polchu2899.github.io/Firma-Digital";
+
+document.getElementById('btn-send').addEventListener('click', async () => {
+  const nombre = document.getElementById('send-nombre').value.trim();
+  const email  = document.getElementById('send-email').value.trim();
+  const nif    = document.getElementById('send-nif').value.trim();
+  const err    = document.getElementById('send-error');
+  const btn    = document.getElementById('btn-send');
+  err.textContent = '';
+
+  if (!nombre || !email) {
+    err.textContent = 'Nombre y email son obligatorios';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Enviando…';
+
+  const token = crypto.randomUUID().replace(/-/g, '');
+  const link  = `${APP_BASE}/index.html?c=${token}`;
+
+  try {
+    await db.collection('contratosPendientes').doc(token).set({
+      nombre, email, nif: nif || null,
+      estado: 'pendiente',
+      creadoEn: firebase.firestore.FieldValue.serverTimestamp(),
+      creadoPor: auth.currentUser.email,
+    });
+
+    const idToken = await auth.currentUser.getIdToken();
+    const res = await fetch(`${API_BASE}/api/send-contract`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken, nombre, email, link }),
+    });
+    if (!res.ok) throw new Error('send failed');
+
+    document.getElementById('send-nombre').value = '';
+    document.getElementById('send-email').value  = '';
+    document.getElementById('send-nif').value    = '';
+    showToast('Contrato enviado a ' + email + ' ✓');
+  } catch (e) {
+    console.error(e);
+    err.textContent = 'El enlace se creó pero el email no se pudo enviar. Cópialo y envíalo a mano abajo.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generar y enviar';
+    loadPendientes();
+  }
+});
+
+let allPendientes = [];
+
+async function loadPendientes() {
+  const tbody = document.getElementById('tbody-pendientes');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+  try {
+    const snap = await db.collection('contratosPendientes').orderBy('creadoEn', 'desc').limit(50).get();
+    allPendientes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderPendientes();
+  } catch (e) {
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="5">Error al cargar enlaces</td></tr>';
+  }
+}
+
+function renderPendientes() {
+  const tbody = document.getElementById('tbody-pendientes');
+  if (allPendientes.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5">
+      <div class="empty-state"><p>Todavía no has enviado ningún enlace</p></div>
+    </td></tr>`;
+    return;
+  }
+  tbody.innerHTML = allPendientes.map(p => {
+    const fecha = p.creadoEn ? p.creadoEn.toDate().toLocaleDateString('es-ES', {
+      day: '2-digit', month: 'short', year: 'numeric'
+    }) : '—';
+    const estado = p.estado === 'firmado'
+      ? '<span class="badge-yes">Firmado</span>'
+      : '<span class="badge-no">Pendiente</span>';
+    const link = `${APP_BASE}/index.html?c=${p.id}`;
+    return `<tr>
+      <td class="td-name">${esc(p.nombre || '—')}</td>
+      <td>${esc(p.email || '—')}</td>
+      <td>${estado}</td>
+      <td style="font-size:0.8rem">${fecha}</td>
+      <td>
+        <button class="btn-detail" onclick="copyLink('${link}')">
+          Copiar enlace
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function copyLink(link) {
+  navigator.clipboard.writeText(link).then(() => showToast('Enlace copiado ✓'));
+}
 
 // ── DATA ──────────────────────────────────────────────────────────────────────
 let allFirmas = [];

@@ -113,6 +113,13 @@
   .btn-sign:hover:not(:disabled) { background: var(--accent2); transform: translateY(-2px); box-shadow: 0 8px 24px oklch(65% 0.18 38 / 0.3); }
   .btn-sign:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
+  /* TOKEN OVERLAY (enlace de firma) */
+  .token-overlay { display: none; position: fixed; inset: 0; z-index: 300; background: var(--bg); align-items: center; justify-content: center; padding: 24px; }
+  .token-overlay.show { display: flex; }
+  .token-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; padding: 40px 32px; max-width: 420px; width: 100%; text-align: center; box-shadow: var(--shadow); }
+  .token-card h2 { font-family: "Syne", sans-serif; font-size: 1.15rem; font-weight: 700; margin-bottom: 10px; }
+  .token-card p { font-size: 0.88rem; color: var(--text2); line-height: 1.5; margin-bottom: 20px; }
+
   /* ÉXITO */
   .success-banner { display: none; flex-direction: column; align-items: center; gap: 12px; padding: 20px; background: oklch(65% 0.15 145 / 0.1); border: 1px solid oklch(65% 0.15 145 / 0.3); border-radius: var(--radius); text-align: center; }
   .success-banner.show { display: flex; }
@@ -297,6 +304,14 @@
 
 <div class="toast" id="toast"></div>
 
+<div class="token-overlay" id="token-overlay">
+  <div class="token-card">
+    <h2 id="token-title">Cargando tu contrato…</h2>
+    <p id="token-msg"></p>
+    <button class="btn-upload" id="token-download" style="display:none">Descargar copia firmada</button>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -459,8 +474,12 @@ dropZone.addEventListener("click", e => {
 });
 
 async function loadPDF(file) {
-  fileName = file.name;
   const buffer = await file.arrayBuffer();
+  await loadPDFFromBuffer(buffer, file.name);
+}
+
+async function loadPDFFromBuffer(buffer, name) {
+  fileName = name;
   pdfBytes = buffer.slice(0);
   const typedArray = new Uint8Array(buffer);
   pdfDoc = await pdfjsLib.getDocument({ data: typedArray }).promise;
@@ -472,9 +491,9 @@ async function loadPDF(file) {
   document.getElementById("viewer-toolbar").style.display = "flex";
   document.getElementById("doc-empty").style.display = "none";
   document.getElementById("doc-info").style.display = "flex";
-  document.getElementById("doc-name").textContent = file.name;
+  document.getElementById("doc-name").textContent = name;
   document.getElementById("doc-pages").textContent = totalPages + " páginas";
-  document.getElementById("toolbar-filename").textContent = file.name;
+  document.getElementById("toolbar-filename").textContent = name;
 
   await renderAllPages();
   updateNav();
@@ -673,6 +692,21 @@ document.getElementById("btn-sign").addEventListener("click", async () => {
     btn.innerHTML = '<div class="spinner"></div> Guardando en Firebase…';
     const fbResult = await saveToFirebase({ nombre, email, nif, fechaISO, hashOriginal, opPortf });
 
+    // ── Marcar el enlace de firma como firmado (si venía de un enlace) ────────
+    if (shareToken && fbResult.ok) {
+      try {
+        await db.collection("contratosPendientes").doc(shareToken).update({
+          estado:            "firmado",
+          firmadoEn:         firebase.firestore.FieldValue.serverTimestamp(),
+          firmaId:           fbResult.id,
+          pdfFirmadoBase64:  fbResult.pdfBase64,
+          nombreArchivo:     fileName.replace(".pdf", "") + "_FIRMADO.pdf",
+        });
+      } catch (e) {
+        console.error("No se pudo actualizar el enlace de firma:", e);
+      }
+    }
+
     // ── UI éxito ──────────────────────────────────────────────────────────────
     document.getElementById("section-success").style.display = "block";
     document.getElementById("meta-nombre").textContent    = nombre;
@@ -702,7 +736,7 @@ async function saveToFirebase({ nombre, email, nif, fechaISO, hashOriginal, opPo
     uint8.forEach(b => binary += String.fromCharCode(b));
     const pdfBase64 = btoa(binary);
 
-    await db.collection("firmas").add({
+    const docRef = await db.collection("firmas").add({
       nombre,
       email,
       nif:                nif || null,
@@ -712,8 +746,9 @@ async function saveToFirebase({ nombre, email, nif, fechaISO, hashOriginal, opPo
       nombreArchivo:      fileName,
       pdfFirmadoBase64:   pdfBase64,
       creadoEn:           firebase.firestore.FieldValue.serverTimestamp(),
+      origenToken:        shareToken || null,
     });
-    return { ok: true };
+    return { ok: true, id: docRef.id, pdfBase64 };
   } catch (err) {
     console.error("Firebase:", err);
     return { ok: false };
@@ -742,6 +777,87 @@ function showToast(msg, error = false) {
 }
 
 window.addEventListener("resize", () => { if (pdfDoc) renderAllPages(); });
+
+// ── ENLACE DE FIRMA (magic link) ───────────────────────────────────────────────
+const CONTRATO_PDF_URL = "contrato_lucas_leo_digital.docx.pdf";
+const urlParams = new URLSearchParams(location.search);
+const shareToken = urlParams.get("c");
+
+if (shareToken) initTokenFlow(shareToken);
+
+async function initTokenFlow(token) {
+  showTokenOverlay("Cargando tu contrato…", "");
+
+  let snap;
+  try {
+    snap = await db.collection("contratosPendientes").doc(token).get();
+  } catch (e) {
+    showTokenOverlay("No se pudo cargar el contrato", "Comprueba tu conexión e inténtalo de nuevo.");
+    return;
+  }
+
+  if (!snap.exists) {
+    showTokenOverlay("Enlace no válido", "Este enlace no existe o ha caducado. Pide a Lucas y Leo Digital que te envíe uno nuevo.");
+    return;
+  }
+
+  const data = snap.data();
+
+  if (data.estado === "firmado") {
+    showTokenOverlay(
+      "Ya has firmado este contrato",
+      "Puedes descargar tu copia firmada cuando quieras.",
+      data.pdfFirmadoBase64,
+      data.nombreArchivo || "contrato_firmado.pdf"
+    );
+    return;
+  }
+
+  document.getElementById("inp-nombre").value = data.nombre || "";
+  document.getElementById("inp-email").value  = data.email  || "";
+  if (data.nif) document.getElementById("inp-nif").value = data.nif;
+  document.getElementById("inp-nombre").readOnly = true;
+  document.getElementById("inp-email").readOnly  = true;
+  updateSignBtn();
+
+  try {
+    const res = await fetch(CONTRATO_PDF_URL);
+    if (!res.ok) throw new Error("PDF no encontrado");
+    const buffer = await res.arrayBuffer();
+    hideTokenOverlay();
+    await loadPDFFromBuffer(buffer, "contrato_lucas_leo_digital.pdf");
+  } catch (e) {
+    showTokenOverlay("No se pudo cargar el contrato", "Inténtalo de nuevo en unos minutos o contacta con nosotros.");
+  }
+}
+
+function showTokenOverlay(title, msg, pdfBase64, dlName) {
+  document.getElementById("token-title").textContent = title;
+  document.getElementById("token-msg").textContent = msg;
+  const dl = document.getElementById("token-download");
+  if (pdfBase64) {
+    dl.style.display = "inline-flex";
+    dl.onclick = () => downloadBase64Pdf(pdfBase64, dlName);
+  } else {
+    dl.style.display = "none";
+  }
+  document.getElementById("token-overlay").classList.add("show");
+}
+function hideTokenOverlay() {
+  document.getElementById("token-overlay").classList.remove("show");
+}
+function downloadBase64Pdf(base64, name) {
+  const binary = atob(base64);
+  const bytes  = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const blob = new Blob([bytes], { type: "application/pdf" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 </script>
 </body>
 </html>
