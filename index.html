@@ -703,32 +703,61 @@ function fillContractFields(p1, p8b, font, fontBold, rgb, d) {
     const irpf        = d.aplicaIrpf ? total * 0.15 : 0;
     const neto        = totalConIva - irpf;
     const pago        = neto / 2;
-    drawField(p8b, formatEuro(total),       217, 477.7, 53, 7.5);
-    drawField(p8b, formatEuro(iva),         217, 458.6, 53, 7.5);
-    drawField(p8b, formatEuro(totalConIva), 217, 439.4, 53, 7.5);
-    drawField(p8b, formatEuro(pago),        217, 420.2, 53, 7.5);
-    drawField(p8b, formatEuro(pago),        217, 401.0, 53, 7.5);
 
-    if (d.aplicaIrpf) {
-      // Fila extra que imita el estilo de la tabla impresa (misma sombra gris,
-      // mismos bordes finos) para que el IRPF se lea como una fila más, no como
-      // una nota suelta debajo.
-      const rowX = 60, rowY = 375.7, rowH = 19.5, colX = 200.25, rowRight = 528;
+    // Filas 1 y 2 (Importe / IVA) no se mueven, van en su posición impresa de siempre.
+    drawField(p8b, formatEuro(total), 217, 477.7, 53, 7.5);
+    drawField(p8b, formatEuro(iva),   217, 458.6, 53, 7.5);
+
+    if (!d.aplicaIrpf) {
+      // Sin IRPF: igual que siempre, en las posiciones impresas de la plantilla.
+      drawField(p8b, formatEuro(totalConIva), 217, 439.4, 53, 7.5);
+      drawField(p8b, formatEuro(pago),        217, 420.2, 53, 7.5);
+      drawField(p8b, formatEuro(pago),        217, 401.0, 53, 7.5);
+      drawField(p8b, formatFechaCorta(d.fechaPago1), 315, 420.2, 55, 7.5);
+      drawField(p8b, formatFechaCorta(d.fechaPago2), 315, 401.0, 55, 7.5);
+    } else {
+      // Con IRPF: reordenamos para que quede Importe → IVA → IRPF → Total a
+      // pagar → Pago 1 → Pago 2. Las 3 últimas filas de la tabla impresa
+      // ("TOTAL con IVA", "Pago 1", "Pago 2") se tapan con un rectángulo del
+      // mismo color de fondo y se redibujan una posición más abajo; la 6ª
+      // fila (antes vacía) pasa a ser el nuevo "Pago 2".
+      const rowX = 60, colX = 200.25, rowRight = 528;
+      const grayFill  = rgb(0.9608, 0.9608, 0.9608);
+      const whiteFill = rgb(1, 1, 1);
       const lineColor = rgb(0.8, 0.8, 0.8);
-      p8b.drawRectangle({ x: rowX, y: rowY, width: colX - rowX, height: rowH, color: rgb(0.9608, 0.9608, 0.9608) });
-      p8b.drawLine({ start: { x: rowX,     y: rowY }, end: { x: rowRight, y: rowY },        thickness: 0.75, color: lineColor });
-      p8b.drawLine({ start: { x: rowX,     y: rowY }, end: { x: rowX,     y: rowY + rowH }, thickness: 0.75, color: lineColor });
-      p8b.drawLine({ start: { x: colX,     y: rowY }, end: { x: colX,     y: rowY + rowH }, thickness: 0.75, color: lineColor });
-      p8b.drawLine({ start: { x: rowRight, y: rowY }, end: { x: rowRight, y: rowY + rowH }, thickness: 0.75, color: lineColor });
+      const darkText  = rgb(0.1, 0.1, 0.1);
 
-      p8b.drawText("IRPF (retención 15%)", { x: rowX + 6, y: rowY + 4.5, size: 9.5, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
-      const valueLine = `-${formatEuro(irpf)} €   ·   Neto a pagar: ${formatEuro(neto)} €`;
-      const valueSize = fitTextSize(font, valueLine, rowRight - colX - 16, 8);
-      p8b.drawText(valueLine, { x: colX + 8, y: rowY + 5, size: valueSize, font, color: gray });
+      // Alturas reales de cada fila de la plantilla (alternan 19.5/18.75pt);
+      // hay que respetarlas o los bordes entre filas no encajan.
+      const drawRowShell = (y0, h, label) => {
+        p8b.drawRectangle({ x: rowX, y: y0, width: colX - rowX, height: h, color: grayFill });
+        p8b.drawRectangle({ x: colX, y: y0, width: rowRight - colX, height: h, color: whiteFill });
+        p8b.drawLine({ start: { x: rowX,     y: y0 }, end: { x: rowRight, y: y0 },     thickness: 0.75, color: lineColor });
+        p8b.drawLine({ start: { x: rowX,     y: y0 }, end: { x: rowX,     y: y0 + h }, thickness: 0.75, color: lineColor });
+        p8b.drawLine({ start: { x: colX,     y: y0 }, end: { x: colX,     y: y0 + h }, thickness: 0.75, color: lineColor });
+        p8b.drawLine({ start: { x: rowRight, y: y0 }, end: { x: rowRight, y: y0 + h }, thickness: 0.75, color: lineColor });
+        p8b.drawText(label, { x: rowX + 6, y: y0 + 4.3, size: 10, font: fontBold, color: darkText });
+        return y0 + 4.3; // baseline para el contenido de la columna de valor
+      };
+      const drawPagoRow = (y0, h, label, importe, fecha) => {
+        const baseline = drawRowShell(y0, h, label);
+        p8b.drawText("€", { x: 206.2, y: baseline, size: 8, font, color: gray });
+        p8b.drawText(formatEuro(importe), { x: 214.2, y: baseline, size: 8, font, color: gray });
+        p8b.drawText("·", { x: 274.9, y: baseline, size: 8, font, color: gray });
+        p8b.drawText("Fecha:", { x: 280.7, y: baseline, size: 8, font, color: gray });
+        drawField(p8b, formatFechaCorta(fecha), 312.3, baseline, 55, 7.5);
+      };
+
+      let baseline = drawRowShell(433.41406, 19.5, "IRPF (retención 15%)");
+      p8b.drawText(`- ${formatEuro(irpf)} €`, { x: colX + 8, y: baseline, size: 8, font, color: gray });
+
+      baseline = drawRowShell(414.66406, 18.75, "Total a pagar");
+      p8b.drawText(`${formatEuro(neto)} €`, { x: colX + 8, y: baseline, size: 9, font: fontBold, color: darkText });
+
+      drawPagoRow(395.16406, 19.5,  "Pago 1 (arranque, 50%)", pago, d.fechaPago1);
+      drawPagoRow(376.41406, 18.75, "Pago 2 (entrega, 50%)",  pago, d.fechaPago2);
     }
   }
-  drawField(p8b, formatFechaCorta(d.fechaPago1), 315, 420.2, 55, 7.5);
-  drawField(p8b, formatFechaCorta(d.fechaPago2), 315, 401.0, 55, 7.5);
 
   const rondasX = { "1": 61, "2": 117.6, "ilimitadas": 238.7, "otro": 303.6 };
   const markX = rondasX[d.rondasRevision];
