@@ -710,10 +710,21 @@ function fillContractFields(p1, p8b, font, fontBold, rgb, d) {
     drawField(p8b, formatEuro(pago),        217, 401.0, 53, 7.5);
 
     if (d.aplicaIrpf) {
-      const formula = `Importe ${formatEuro(total)} € + IVA (21%) ${formatEuro(iva)} € - IRPF (15%) ${formatEuro(irpf)} € = Total neto ${formatEuro(neto)} €`;
-      const formulaSize = fitTextSize(font, formula, 462, 7.5);
-      p8b.drawText(formula, { x: 66, y: 384, size: formulaSize, font, color: gray });
-      p8b.drawText(`Pago 1 y Pago 2 son el 50% de ese importe neto (${formatEuro(neto)} €).`, { x: 66, y: 368, size: 8, font: fontBold, color: rgb(0.1,0.1,0.1) });
+      // Fila extra que imita el estilo de la tabla impresa (misma sombra gris,
+      // mismos bordes finos) para que el IRPF se lea como una fila más, no como
+      // una nota suelta debajo.
+      const rowX = 60, rowY = 375.7, rowH = 19.5, colX = 200.25, rowRight = 528;
+      const lineColor = rgb(0.8, 0.8, 0.8);
+      p8b.drawRectangle({ x: rowX, y: rowY, width: colX - rowX, height: rowH, color: rgb(0.9608, 0.9608, 0.9608) });
+      p8b.drawLine({ start: { x: rowX,     y: rowY }, end: { x: rowRight, y: rowY },        thickness: 0.75, color: lineColor });
+      p8b.drawLine({ start: { x: rowX,     y: rowY }, end: { x: rowX,     y: rowY + rowH }, thickness: 0.75, color: lineColor });
+      p8b.drawLine({ start: { x: colX,     y: rowY }, end: { x: colX,     y: rowY + rowH }, thickness: 0.75, color: lineColor });
+      p8b.drawLine({ start: { x: rowRight, y: rowY }, end: { x: rowRight, y: rowY + rowH }, thickness: 0.75, color: lineColor });
+
+      p8b.drawText("IRPF (retención 15%)", { x: rowX + 6, y: rowY + 4.5, size: 9.5, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+      const valueLine = `-${formatEuro(irpf)} €   ·   Neto a pagar: ${formatEuro(neto)} €`;
+      const valueSize = fitTextSize(font, valueLine, rowRight - colX - 16, 8);
+      p8b.drawText(valueLine, { x: colX + 8, y: rowY + 5, size: valueSize, font, color: gray });
     }
   }
   drawField(p8b, formatFechaCorta(d.fechaPago1), 315, 420.2, 55, 7.5);
