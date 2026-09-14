@@ -729,7 +729,8 @@ function fillContractFields(p1, p8b, font, fontBold, rgb, d) {
 
       // Alturas reales de cada fila de la plantilla (alternan 19.5/18.75pt);
       // hay que respetarlas o los bordes entre filas no encajan.
-      const underlineColor = rgb(0.55, 0.55, 0.55);
+      // Mismo gris casi negro que usan los caracteres "_" impresos de la plantilla.
+      const underlineColor = rgb(0.1765, 0.1765, 0.1765);
       const drawRowShell = (y0, h, label) => {
         p8b.drawRectangle({ x: rowX, y: y0, width: colX - rowX, height: h, color: grayFill });
         p8b.drawRectangle({ x: colX, y: y0, width: rowRight - colX, height: h, color: whiteFill });
@@ -745,7 +746,7 @@ function fillContractFields(p1, p8b, font, fontBold, rgb, d) {
       const drawMoneyValue = (x, baseline, valueStr) => {
         p8b.drawText("€", { x, y: baseline, size: 7.5, font, color: gray });
         p8b.drawText(valueStr, { x: x + 8, y: baseline, size: 7.5, font, color: gray });
-        p8b.drawLine({ start: { x: x + 8, y: baseline - 1.5 }, end: { x: x + 66, y: baseline - 1.5 }, thickness: 0.6, color: underlineColor });
+        p8b.drawLine({ start: { x: x + 8, y: baseline - 1.5 }, end: { x: x + 66, y: baseline - 1.5 }, thickness: 0.75, color: underlineColor });
       };
       const drawPagoRow = (y0, h, label, importe, fecha) => {
         const baseline = drawRowShell(y0, h, label);
@@ -753,7 +754,7 @@ function fillContractFields(p1, p8b, font, fontBold, rgb, d) {
         p8b.drawText("·", { x: 274.9, y: baseline, size: 7.5, font, color: gray });
         p8b.drawText("Fecha:", { x: 280.7, y: baseline, size: 7.5, font, color: gray });
         p8b.drawText(formatFechaCorta(fecha) || "", { x: 312.3, y: baseline, size: 7.5, font, color: gray });
-        p8b.drawLine({ start: { x: 312.3, y: baseline - 1.5 }, end: { x: 367.3, y: baseline - 1.5 }, thickness: 0.6, color: underlineColor });
+        p8b.drawLine({ start: { x: 312.3, y: baseline - 1.5 }, end: { x: 367.3, y: baseline - 1.5 }, thickness: 0.75, color: underlineColor });
       };
 
       let baseline = drawRowShell(433.41406, 19.5, "IRPF (retención 15%)");
