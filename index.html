@@ -562,8 +562,8 @@ function addSigZoneOverlay(wrapper, pageNum, vp, scale) {
   // Pág 7: espacio en blanco entre y_raw=380 y línea y_raw=484 → cliente lado derecho x=315
   // Pág 8: espacio en blanco entre y_raw=530 y línea y_raw=625 → cliente lado derecho x=315
   const zones = {
-    7: { x: 306, yTop: 600, yBot: 750, w: 290 },
-    8: { x: 306, yTop: 440, yBot: 491, w: 290 },
+    7: { x: 306, yTop: 410, yBot: 482, w: 290 },
+    8: { x: 306, yTop: 568, yBot: 623, w: 290 },
   };
   const z = zones[pageNum];
   if (!z) return;
