@@ -529,6 +529,11 @@
         </div>
       </div>
 
+      <label style="display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:0.85rem;color:var(--text2);cursor:pointer">
+        <input type="checkbox" id="send-irpf" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer">
+        Aplica retención IRPF (15%) — solo si el cliente es empresa o profesional
+      </label>
+
       <button class="btn-login" id="btn-send" style="margin-top:0;width:auto;white-space:nowrap;padding:11px 24px">Generar y enviar</button>
       <p class="login-error" id="send-error" style="text-align:left"></p>
     </div>
@@ -696,6 +701,7 @@ document.getElementById('btn-send').addEventListener('click', async () => {
       fechaEntregaEstimada:document.getElementById('send-fecha-entrega').value || null,
       referenciaPresupuesto: document.getElementById('send-referencia').value.trim() || null,
       importeTotal:        importeVal ? parseFloat(importeVal) : null,
+      aplicaIrpf:          document.getElementById('send-irpf').checked,
       rondasRevision:      document.getElementById('send-rondas').value,
       rondasOtroTexto:     document.getElementById('send-rondas-otro').value.trim() || null,
       observaciones:       document.getElementById('send-observaciones').value.trim() || null,
@@ -721,6 +727,7 @@ document.getElementById('btn-send').addEventListener('click', async () => {
     ].forEach(id => document.getElementById(id).value = '');
     document.getElementById('send-rondas').value = '2';
     document.getElementById('send-rondas-otro-wrap').style.display = 'none';
+    document.getElementById('send-irpf').checked = false;
     showToast('Contrato enviado a ' + email + ' ✓');
   } catch (e) {
     console.error(e);

@@ -700,12 +700,19 @@ function fillContractFields(p1, p8b, font, fontBold, rgb, d) {
     const total       = Number(d.importeTotal);
     const iva         = total * 0.21;
     const totalConIva = total + iva;
-    const pago        = totalConIva / 2;
+    const irpf        = d.aplicaIrpf ? total * 0.15 : 0;
+    const neto        = totalConIva - irpf;
+    const pago        = neto / 2;
     drawField(p8b, formatEuro(total),       217, 477.7, 53, 7.5);
     drawField(p8b, formatEuro(iva),         217, 458.6, 53, 7.5);
     drawField(p8b, formatEuro(totalConIva), 217, 439.4, 53, 7.5);
     drawField(p8b, formatEuro(pago),        217, 420.2, 53, 7.5);
     drawField(p8b, formatEuro(pago),        217, 401.0, 53, 7.5);
+
+    if (d.aplicaIrpf) {
+      p8b.drawText(`IRPF retenido (15%): -${formatEuro(irpf)} €`, { x: 66, y: 384, size: 8, font, color: gray });
+      p8b.drawText(`Importe neto a pagar: ${formatEuro(neto)} €`, { x: 66, y: 368, size: 8.5, font: fontBold, color: rgb(0.1,0.1,0.1) });
+    }
   }
   drawField(p8b, formatFechaCorta(d.fechaPago1), 315, 420.2, 55, 7.5);
   drawField(p8b, formatFechaCorta(d.fechaPago2), 315, 401.0, 55, 7.5);
