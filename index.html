@@ -34,10 +34,10 @@
   .badge { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; background: oklch(65% 0.18 38 / 0.15); color: var(--accent); border: 1px solid oklch(65% 0.18 38 / 0.3); }
 
   /* LAYOUT */
-  .app { display: grid; grid-template-columns: 1fr 340px; flex: 1; overflow: hidden; height: calc(100vh - 60px); }
+  .app { display: grid; grid-template-columns: 1fr 340px; grid-template-rows: minmax(0, 1fr); flex: 1; overflow: hidden; height: calc(100vh - 60px); }
 
   /* VISOR */
-  .viewer-area { display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid var(--border); }
+  .viewer-area { display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid var(--border); min-height: 0; }
   .viewer-toolbar { display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: var(--bg2); border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .viewer-toolbar span { font-size: 0.8rem; color: var(--text2); }
   .page-nav { display: flex; align-items: center; gap: 8px; margin-left: auto; }
@@ -45,7 +45,7 @@
   .btn-icon:hover { background: var(--border); }
   .btn-icon:disabled { opacity: 0.3; cursor: default; }
   .page-info { font-size: 0.8rem; color: var(--text2); min-width: 60px; text-align: center; }
-  .viewer-scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 24px; gap: 16px; background: oklch(8% 0.01 260); }
+  .viewer-scroll { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 24px; gap: 16px; background: oklch(8% 0.01 260); min-height: 0; }
   .viewer-scroll::-webkit-scrollbar { width: 6px; }
   .viewer-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
   .pdf-page-wrapper { position: relative; box-shadow: var(--shadow); border-radius: 4px; overflow: hidden; line-height: 0; flex-shrink: 0; }
@@ -63,7 +63,7 @@
   #file-input { display: none; }
 
   /* PANEL */
-  .panel { display: flex; flex-direction: column; overflow-y: auto; background: var(--bg2); }
+  .panel { display: flex; flex-direction: column; overflow-y: auto; background: var(--bg2); min-height: 0; }
   .panel::-webkit-scrollbar { width: 4px; }
   .panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   .panel-section { padding: 20px; border-bottom: 1px solid var(--border); }
@@ -490,10 +490,10 @@ async function loadPDF(file) {
   await loadPDFFromBuffer(buffer, file.name);
 }
 
-async function loadPDFFromBuffer(buffer, name) {
+async function loadPDFFromBuffer(buffer, name, displayBuffer) {
   fileName = name;
   pdfBytes = buffer.slice(0);
-  const typedArray = new Uint8Array(buffer);
+  const typedArray = new Uint8Array(displayBuffer || buffer);
   pdfDoc = await pdfjsLib.getDocument({ data: typedArray }).promise;
   totalPages = pdfDoc.numPages;
   currentPage = 1;
@@ -592,8 +592,9 @@ document.getElementById("btn-next").addEventListener("click", () => {
   if (currentPage < totalPages) { currentPage++; scrollToPage(currentPage); updateNav(); }
 });
 function scrollToPage(n) {
+  const scroll = document.getElementById("viewer-scroll");
   const el = document.querySelector(`[data-page="${n}"]`);
-  if (el) el.scrollIntoView({behavior:"smooth", block:"start"});
+  if (el && scroll) scroll.scrollTo({ top: el.offsetTop - 12, behavior: "smooth" });
 }
 function updateNav() {
   document.getElementById("page-info").textContent = currentPage + " / " + totalPages;
@@ -964,8 +965,24 @@ async function initTokenFlow(token) {
     const res = await fetch(CONTRATO_PDF_URL);
     if (!res.ok) throw new Error("PDF no encontrado");
     const buffer = await res.arrayBuffer();
+
+    // Vista previa: rellenamos página 1 y Anexo I con los datos ya conocidos,
+    // para que el cliente vea el contrato completo mientras lo firma (no en blanco).
+    let displayBuffer = buffer;
+    try {
+      const { PDFDocument, rgb, StandardFonts } = PDFLib;
+      const previewDoc      = await PDFDocument.load(buffer);
+      const previewPages    = previewDoc.getPages();
+      const previewFont     = await previewDoc.embedFont(StandardFonts.Helvetica);
+      const previewFontBold = await previewDoc.embedFont(StandardFonts.HelveticaBold);
+      fillContractFields(previewPages[0], previewPages[7], previewFont, previewFontBold, rgb, data);
+      displayBuffer = await previewDoc.save();
+    } catch (e) {
+      console.error("No se pudo generar la vista previa rellenada:", e);
+    }
+
     hideTokenOverlay();
-    await loadPDFFromBuffer(buffer, "contrato_lucas_leo_digital.pdf");
+    await loadPDFFromBuffer(buffer, "contrato_lucas_leo_digital.pdf", displayBuffer);
   } catch (e) {
     showTokenOverlay("No se pudo cargar el contrato", "Inténtalo de nuevo en unos minutos o contacta con nosotros.");
   }
